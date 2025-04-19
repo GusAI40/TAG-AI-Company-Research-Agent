@@ -32,7 +32,7 @@ app = FastAPI(title="Tavily Company Research API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*", "https://tag-ai-company-research-agent.vercel.app"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
@@ -255,6 +255,27 @@ async def generate_pdf(data: GeneratePDFRequest):
             raise HTTPException(status_code=500, detail=result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/debug")
+async def debug_info():
+    """Return debug information about the server configuration."""
+    return {
+        "message": "Debug information",
+        "server_time": datetime.now().isoformat(),
+        "environment": {
+            "python_version": os.sys.version,
+            "api_keys_configured": {
+                "tavily": bool(os.getenv("TAVILY_API_KEY")),
+                "gemini": bool(os.getenv("GEMINI_API_KEY")),
+                "openai": bool(os.getenv("OPENAI_API_KEY")),
+            },
+            "mongodb_configured": mongodb is not None,
+        },
+        "cors": {
+            "allow_origins": ["*", "https://tag-ai-company-research-agent.vercel.app"],
+            "allow_credentials": True,
+        }
+    }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

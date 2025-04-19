@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Research Agent - Fallback</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        code {
+            background: #f0f0f0;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .api-test {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+        }
+        #api-result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f4fe;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Company Research Agent</h1>
+    
+    <div class="card">
+        <h2>Application Fallback Page</h2>
+        <p>The main application encountered an issue while loading. This could be due to:</p>
+        <ul>
+            <li>API connectivity problems</li>
+            <li>WebSocket connection issues</li>
+            <li>Environment variable configuration</li>
+        </ul>
+    </div>
+    
+    <div class="card">
+        <h2>Troubleshooting Steps</h2>
+        <ol>
+            <li>Check the browser console for detailed error messages (Press F12 or right-click → Inspect → Console)</li>
+            <li>Verify that the API is accessible with the test button below</li>
+            <li>Ensure environment variables are properly configured in Vercel</li>
+        </ol>
+    </div>
+    
+    <div class="card">
+        <h2>API Connection Test</h2>
+        <p>Click the button below to test the connection to the API:</p>
+        <button onclick="testAPIConnection()">Test API Connection</button>
+        
+        <div class="api-test">
+            <div id="api-result">Results will appear here...</div>
+        </div>
+        
+        <script>
+            function testAPIConnection() {
+                const apiUrl = document.getElementById('api-url-input').value || 'https://tag-ai-company-research-agent.fly.dev';
+                const resultElement = document.getElementById('api-result');
+                
+                resultElement.innerText = 'Testing connection to ' + apiUrl + '...';
+                
+                fetch(apiUrl)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        resultElement.innerText = 'Connection successful!\n\nResponse: ' + JSON.stringify(data, null, 2);
+                    })
+                    .catch(error => {
+                        resultElement.innerText = 'Connection failed: ' + error.message;
+                    });
+            }
+        </script>
+        
+        <p>Custom API URL:</p>
+        <input type="text" id="api-url-input" placeholder="https://tag-ai-company-research-agent.fly.dev" style="width: 100%; padding: 8px;">
+        <small>Try adding /debug to the URL for more information</small>
+    </div>
+    
+    <div class="card">
+        <h2>Environment Variables</h2>
+        <p>Ensure these environment variables are set in Vercel:</p>
+        <ul>
+            <li><code>VITE_API_URL</code> = https://tag-ai-company-research-agent.fly.dev</li>
+            <li><code>VITE_WS_URL</code> = wss://tag-ai-company-research-agent.fly.dev</li>
+        </ul>
+    </div>
+</body>
+</html> 
