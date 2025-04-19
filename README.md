@@ -4,6 +4,19 @@
 
 A multi-agent tool that generates comprehensive company research reports. The platform uses a pipeline of AI agents to gather, curate, and synthesize information about any company.
 
+## Enhanced Features
+
+This enhanced version includes several improvements:
+
+- **Advanced AI Models**: 
+  - Upgraded to GPT-4o (from GPT-4o-mini) for better report formatting and analysis
+  - Upgraded to Gemini Pro (from Gemini 2.0 Flash) for improved research synthesis
+
+- **Dark Mode Support**: 
+  - Added theme toggle functionality for better user experience
+  - Automatically detects and respects system preferences
+  - Persistent theme settings using localStorage
+
 ## Features
 
 - **Multi-Source Research**: Gathers data from various sources including company websites, news articles, financial reports, and industry analyses
