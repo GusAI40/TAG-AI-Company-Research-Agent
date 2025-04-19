@@ -53,7 +53,7 @@ class NewsScanner(BaseResearcher):
                     await websocket_manager.send_status_update(
                         job_id=job_id,
                         status="processing",
-                        message=f"Used Tavily Search to find {len(news_data)} documents",
+                        message=f"Used TAG ai Search to find {len(news_data)} documents",
                         result={
                             "step": "Searching",
                             "analyst_type": "News Scanner",

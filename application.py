@@ -28,7 +28,7 @@ logger.setLevel(logging.INFO)
 console_handler = logging.StreamHandler()
 logger.addHandler(console_handler)
 
-app = FastAPI(title="Tavily Company Research API")
+app = FastAPI(title="TAG ai Company Research API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -265,7 +265,7 @@ async def debug_info():
         "environment": {
             "python_version": os.sys.version,
             "api_keys_configured": {
-                "tavily": bool(os.getenv("TAVILY_API_KEY")),
+                "tag_ai": bool(os.getenv("TAVILY_API_KEY")),
                 "gemini": bool(os.getenv("GEMINI_API_KEY")),
                 "openai": bool(os.getenv("OPENAI_API_KEY")),
             },

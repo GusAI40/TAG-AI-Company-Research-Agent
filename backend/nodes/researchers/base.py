@@ -297,7 +297,7 @@ class BaseResearcher:
             await websocket_manager.send_status_update(
                 job_id=job_id,
                 status="search_started",
-                message=f"Using Tavily to search for {len(queries)} queries",
+                message=f"Using TAG ai to search for {len(queries)} queries",
                 result={
                     "step": "Searching",
                     "total_queries": len(queries)
