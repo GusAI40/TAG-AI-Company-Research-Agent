@@ -68,40 +68,19 @@ const Header: React.FC<HeaderProps> = ({ glassStyle, title = 'Company Research A
           {title}
         </h1>
         <p className="text-gray-600 text-lg font-['DM_Sans'] mt-4">
-          Conduct in-depth company diligence powered by Tavily
+          Conduct in-depth company diligence powered by TAG ai
         </p>
       </div>
       <div className="absolute top-0 right-0 flex items-center space-x-2">
-        <a
-          href="https://tavily.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`text-gray-600 hover:text-gray-900 transition-colors ${glassStyle} rounded-lg flex items-center justify-center`}
-          style={{ width: '50px', height: '50px', padding: '2px' }}
-          aria-label="Tavily Website"
-        >
-          <img 
-            src="/tavilylogo.png" 
-            alt="Tavily Logo" 
-            className="w-full h-full object-contain" 
-            style={{ 
-              width: '45px', 
-              height: '45px',
-              display: 'block',
-              margin: 'auto'
-            }}
-            onError={handleImageError}
-          />
-        </a>
         <div className="flex items-center space-x-3">
           <ThemeToggle />
           <a
-            href="https://github.com/pogjester/company-research-agent"
+            href="https://github.com/GusAI40/TAG-AI-Company-Research-Agent"
             target="_blank"
             rel="noopener noreferrer"
             className={`text-gray-600 hover:text-gray-900 transition-colors ${glassStyle} rounded-lg flex items-center justify-center`}
             style={{ width: '40px', height: '40px', padding: '8px' }}
-            aria-label="GitHub Profile"
+            aria-label="GitHub Repository"
           >
             <Github 
               style={{ 
