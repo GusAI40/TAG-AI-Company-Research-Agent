@@ -32,6 +32,27 @@ if (!API_URL || !WS_URL) {
   );
 }
 
+// Define writing animation
+const writingAnimation = `
+@keyframes writing {
+  0% { width: 0; }
+  100% { width: 100%; }
+}
+
+.writing-animation {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid;
+  animation: writing 1.5s steps(40, end) forwards,
+            blink-caret 0.75s step-end infinite;
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: #468BFF; }
+}
+`;
+
 // Add this near your other styles at the top of the file
 const colorAnimation = `
 @keyframes colorTransition {
@@ -73,6 +94,11 @@ const colorAnimation = `
 const colorStyle = document.createElement('style');
 colorStyle.textContent = colorAnimation;
 document.head.appendChild(colorStyle);
+
+// Apply writing animation style
+const writingStyle = document.createElement('style');
+writingStyle.textContent = writingAnimation;
+document.head.appendChild(writingStyle);
 
 // Add DM Sans font import
 const dmSansStyle = document.createElement('style');
