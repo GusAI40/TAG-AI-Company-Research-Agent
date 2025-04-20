@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Theme, ThemeContextProps } from '../context';
 
 interface HeaderProps {
   glassStyle: string;
@@ -72,14 +73,6 @@ const Header: React.FC<HeaderProps> = ({ glassStyle, title = 'Company Research A
       </div>
       <div className="absolute top-0 right-0 flex items-center space-x-4">
         <ThemeToggle />
-        <a
-          href="https://github.com/GusAI40/TAG-AI-Company-Research-Agent"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-gray-600 hover:text-gray-900 underline font-['DM_Sans']"
-        >
-          GitHub Repo
-        </a>
       </div>
     </div>
   );
