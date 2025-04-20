@@ -19,18 +19,26 @@ class Briefing:
         # Configure Gemini with the latest settings
         genai.configure(api_key=self.gemini_key)
         
-        # Use gemini-1.5-pro model - more reliable than the older gemini-pro
-        try:
-            self.gemini_model = genai.GenerativeModel('gemini-1.5-pro')
-            logger.info("Successfully initialized Gemini 1.5 Pro model")
-        except Exception as e:
-            logger.warning(f"Failed to initialize gemini-1.5-pro: {e}. Falling back to gemini-pro.")
+        # Try different Gemini models in order of preference
+        self.gemini_model = None
+        models_to_try = [
+            'gemini-1.5-pro',
+            'gemini-1.5-flash',
+            'gemini-2.0-flash',
+            'gemini-2.0-flash-lite'
+        ]
+        
+        for model_name in models_to_try:
             try:
-                self.gemini_model = genai.GenerativeModel('gemini-pro')
-                logger.info("Successfully initialized Gemini Pro model")
+                self.gemini_model = genai.GenerativeModel(model_name)
+                logger.info(f"Successfully initialized {model_name} model")
+                break
             except Exception as e:
-                logger.error(f"Failed to initialize any Gemini model: {e}")
-                raise ValueError(f"Could not initialize Gemini model: {e}")
+                logger.warning(f"Failed to initialize {model_name}: {e}")
+        
+        if not self.gemini_model:
+            logger.error("Could not initialize any Gemini model")
+            raise ValueError("Failed to initialize any Gemini model. Check your API key and network connection.")
 
     async def generate_category_briefing(
         self, docs: Union[Dict[str, Any], List[Dict[str, Any]]], 
