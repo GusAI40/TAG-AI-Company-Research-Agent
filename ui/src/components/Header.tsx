@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Github } from 'lucide-react';
 
 interface HeaderProps {
   glassStyle: string;
@@ -71,27 +70,16 @@ const Header: React.FC<HeaderProps> = ({ glassStyle, title = 'Company Research A
           Conduct in-depth company diligence powered by TAG ai
         </p>
       </div>
-      <div className="absolute top-0 right-0 flex items-center space-x-2">
-        <div className="flex items-center space-x-3">
-          <ThemeToggle />
-          <a
-            href="https://github.com/GusAI40/TAG-AI-Company-Research-Agent"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`text-gray-600 hover:text-gray-900 transition-colors ${glassStyle} rounded-lg flex items-center justify-center`}
-            style={{ width: '40px', height: '40px', padding: '8px' }}
-            aria-label="GitHub Repository"
-          >
-            <Github 
-              style={{ 
-                width: '24px', 
-                height: '24px',
-                display: 'block',
-                margin: 'auto'
-              }} 
-            />
-          </a>
-        </div>
+      <div className="absolute top-0 right-0 flex items-center space-x-4">
+        <ThemeToggle />
+        <a
+          href="https://github.com/GusAI40/TAG-AI-Company-Research-Agent"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-600 hover:text-gray-900 underline font-['DM_Sans']"
+        >
+          GitHub Repo
+        </a>
       </div>
     </div>
   );
