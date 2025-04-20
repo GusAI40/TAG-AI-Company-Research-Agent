@@ -157,7 +157,11 @@ class BaseResearcher:
         - Focus ONLY on {company}-specific information
         - Make queries very brief and to the point
         - Provide exactly 4 search queries (one per line), with no hyphens or dashes
-        - DO NOT make assumptions about the industry - use only the provided industry information"""
+        - Add recent date markers like '{year}', '{year-1}-{year}', or 'latest', 'current' to get the most up-to-date information
+        - Include queries for specific details like 'leadership team', 'current executives', 'latest news {year}'
+        - For school districts, include 'current superintendent', 'school board members {year}'
+        - DO NOT make assumptions about the industry - use only the provided industry information
+        - Prioritize factual and verifiable information"""
 
     def _fallback_queries(self, company, year):
         return [
@@ -283,13 +287,21 @@ class BaseResearcher:
 
         # Prepare all search parameters upfront
         search_params = {
-            "search_depth": "basic",
+            "search_depth": "advanced",  # Use advanced search depth for more comprehensive results
             "include_raw_content": False,
-            "max_results": 5
+            "max_results": 8,  # Increase from 5 to 8 for more comprehensive data
+            "include_domains": [],  # Initialize empty lists for include/exclude domains
+            "exclude_domains": [],
         }
+        
+        # For school districts, prioritize official .edu domains and exclude generic sites
+        if "school district" in str(company).lower() or "isd" in str(company).lower():
+            search_params["include_domains"].extend([".edu", ".gov", ".org"])
+            search_params["search_depth"] = "advanced"
         
         if self.analyst_type == "news_analyst":
             search_params["topic"] = "news"
+            search_params["time_period"] = "month"  # Focus on more recent news
         elif self.analyst_type == "financial_analyst":
             search_params["topic"] = "finance"
 
