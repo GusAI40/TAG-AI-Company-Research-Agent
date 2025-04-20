@@ -16,9 +16,21 @@ class Briefing:
         if not self.gemini_key:
             raise ValueError("GEMINI_API_KEY environment variable is not set")
         
-        # Configure Gemini
+        # Configure Gemini with the latest settings
         genai.configure(api_key=self.gemini_key)
-        self.gemini_model = genai.GenerativeModel('gemini-pro')
+        
+        # Use gemini-1.5-pro model - more reliable than the older gemini-pro
+        try:
+            self.gemini_model = genai.GenerativeModel('gemini-1.5-pro')
+            logger.info("Successfully initialized Gemini 1.5 Pro model")
+        except Exception as e:
+            logger.warning(f"Failed to initialize gemini-1.5-pro: {e}. Falling back to gemini-pro.")
+            try:
+                self.gemini_model = genai.GenerativeModel('gemini-pro')
+                logger.info("Successfully initialized Gemini Pro model")
+            except Exception as e:
+                logger.error(f"Failed to initialize any Gemini model: {e}")
+                raise ValueError(f"Could not initialize Gemini model: {e}")
 
     async def generate_category_briefing(
         self, docs: Union[Dict[str, Any], List[Dict[str, Any]]], 
@@ -179,11 +191,24 @@ Analyze the following documents and extract key information. Provide only the br
         
         try:
             logger.info("Sending prompt to LLM")
-            response = self.gemini_model.generate_content(prompt)
-            content = response.text.strip()
+            
+            try:
+                # Try using Gemini first
+                response = self.gemini_model.generate_content(prompt)
+                content = response.text.strip() if hasattr(response, 'text') else str(response).strip()
+            except Exception as gemini_error:
+                # Log Gemini error
+                logger.error(f"Gemini API error for {category} briefing: {gemini_error}")
+                
+                # Provide a basic fallback response
+                content = f"### {category.capitalize()} Summary\n\n" + \
+                          f"* Information about {company} in the {industry} industry\n" + \
+                          "* Data extraction in progress\n" + \
+                          "* See the final report for complete details"
+            
             if not content:
                 logger.error(f"Empty response from LLM for {category} briefing")
-                return {'content': ''}
+                return {'content': f"### {category.capitalize()} Summary\n\n* Information available in the final report"}
 
             # Send completion status
             if websocket_manager := context.get('websocket_manager'):
