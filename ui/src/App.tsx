@@ -17,20 +17,78 @@ import {
   AnimationStyle
 } from './types';
 
-const API_URL = import.meta.env.VITE_API_URL;
-const WS_URL = import.meta.env.VITE_WS_URL;
+const rawApiUrl = import.meta.env.VITE_API_URL as string | undefined;
+const rawWsUrl = import.meta.env.VITE_WS_URL as string | undefined;
 
 // Debug logging for environment variables
 console.log("Debug - Environment Variables:");
-console.log("VITE_API_URL:", API_URL);
-console.log("VITE_WS_URL:", WS_URL);
+console.log("VITE_API_URL:", rawApiUrl);
+console.log("VITE_WS_URL:", rawWsUrl);
 
-if (!API_URL || !WS_URL) {
-  console.error("Critical Error: Environment variables VITE_API_URL and VITE_WS_URL must be set");
-  throw new Error(
-    "Environment variables VITE_API_URL and VITE_WS_URL must be set"
-  );
-}
+const stripTrailingSlash = (value: string) => value.replace(/\/+$/, "");
+
+const ensureLeadingSlash = (value: string) =>
+  value.startsWith("/") ? value : `/${value}`;
+
+const joinUrl = (base: string, path: string) => {
+  if (!path) return stripTrailingSlash(base);
+  const cleanBase = stripTrailingSlash(base || "");
+  const cleanPath = ensureLeadingSlash(path);
+  return cleanBase ? `${cleanBase}${cleanPath}` : cleanPath;
+};
+
+const isBrowser = typeof window !== 'undefined';
+
+const getBrowserFallbacks = () => {
+  if (!isBrowser) {
+    return { http: "", ws: "" };
+  }
+
+  const httpOrigin = stripTrailingSlash(window.location.origin);
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsOrigin = `${wsProtocol}//${window.location.host}`;
+
+  return {
+    http: httpOrigin,
+    ws: stripTrailingSlash(wsOrigin)
+  };
+};
+
+const browserFallbacks = getBrowserFallbacks();
+
+const normalizeHttpBase = (value: string | undefined, fallback: string) => {
+  const trimmed = value?.trim();
+  if (!trimmed) return stripTrailingSlash(fallback);
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return stripTrailingSlash(trimmed);
+  }
+
+  if (trimmed.startsWith('//')) {
+    const protocol = isBrowser ? window.location.protocol : 'https:';
+    return stripTrailingSlash(`${protocol}${trimmed}`);
+  }
+
+  const protocol = isBrowser ? window.location.protocol : 'https:';
+  return stripTrailingSlash(`${protocol}//${trimmed}`);
+};
+
+const normalizeWsBase = (value: string | undefined, fallback: string) => {
+  const trimmed = value?.trim();
+  if (!trimmed) return stripTrailingSlash(fallback);
+
+  if (/^wss?:\/\//i.test(trimmed)) {
+    return stripTrailingSlash(trimmed);
+  }
+
+  if (trimmed.startsWith('//')) {
+    const protocol = isBrowser && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return stripTrailingSlash(`${protocol}${trimmed}`);
+  }
+
+  const protocol = isBrowser && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return stripTrailingSlash(`${protocol}//${trimmed}`);
+};
 
 // Define writing animation
 const writingAnimation = `
@@ -49,21 +107,18 @@ const writingAnimation = `
 
 @keyframes blink-caret {
   from, to { border-color: transparent; }
-  50% { border-color: #468BFF; }
+  50% { border-color: #0078D2; }
 }
 `;
 
 // Add this near your other styles at the top of the file
 const colorAnimation = `
 @keyframes colorTransition {
-  0% { stroke: #468BFF; }
-  15% { stroke: #8FBCFA; }
-  30% { stroke: #468BFF; }
-  45% { stroke: #FE363B; }
-  60% { stroke: #FF9A9D; }
-  75% { stroke: #FDBB11; }
-  90% { stroke: #F6D785; }
-  100% { stroke: #468BFF; }
+  0% { stroke: #0078D2; }
+  25% { stroke: #ffffff; }
+  50% { stroke: #8A1C33; }
+  75% { stroke: #d9d9d9; }
+  100% { stroke: #0078D2; }
 }
 
 .animate-colors {
@@ -113,6 +168,82 @@ dmSansStyle.textContent = `
 document.head.appendChild(dmSansStyle);
 
 function App() {
+
+  const [apiBase, setApiBase] = useState(() => normalizeHttpBase(rawApiUrl, browserFallbacks.http));
+  const [wsBase, setWsBase] = useState(() => normalizeWsBase(rawWsUrl, browserFallbacks.ws));
+  const fallbackOriginsRef = useRef(browserFallbacks);
+  const usingFallbackRef = useRef({
+    api: !rawApiUrl,
+    ws: !rawWsUrl,
+  });
+
+  const getActiveApiBase = () => {
+    if (usingFallbackRef.current.api && isBrowser) {
+      return fallbackOriginsRef.current.http;
+    }
+    return apiBase;
+  };
+
+  const getActiveWsBase = () => {
+    if (usingFallbackRef.current.ws && isBrowser) {
+      return fallbackOriginsRef.current.ws;
+    }
+    return wsBase;
+  };
+
+  const switchToBrowserFallback = () => {
+    if (!isBrowser) {
+      return false;
+    }
+
+    const { http, ws } = fallbackOriginsRef.current;
+    let switched = false;
+
+    if (!usingFallbackRef.current.api) {
+      usingFallbackRef.current.api = true;
+      setApiBase(http);
+      switched = true;
+    }
+
+    if (!usingFallbackRef.current.ws) {
+      usingFallbackRef.current.ws = true;
+      setWsBase(ws);
+      switched = true;
+    }
+
+    if (switched) {
+      console.warn("Switching to browser origin for API/WebSocket requests");
+    }
+
+    return switched;
+  };
+
+  const fetchWithAutoFallback = async (path: string, init?: RequestInit) => {
+    const targetUrl = joinUrl(getActiveApiBase(), path);
+    console.log("Issuing request to:", targetUrl);
+
+    try {
+      return await fetch(targetUrl, init);
+    } catch (error) {
+      console.warn("Fetch failed for URL:", targetUrl, error);
+      if (error instanceof TypeError && switchToBrowserFallback()) {
+        const fallbackUrl = joinUrl(getActiveApiBase(), path);
+        console.log("Retrying request with fallback origin:", fallbackUrl);
+        return fetch(fallbackUrl, init);
+      }
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    if (!isBrowser) return;
+    console.log("Active API base:", getActiveApiBase() || '(relative origin)');
+  }, [apiBase]);
+
+  useEffect(() => {
+    if (!isBrowser) return;
+    console.log("Active WS base:", getActiveWsBase() || '(relative origin)');
+  }, [wsBase]);
 
   const [isResearching, setIsResearching] = useState(false);
   const [status, setStatus] = useState<ResearchStatusType | null>(null);
@@ -177,19 +308,17 @@ function App() {
   const [isCopied, setIsCopied] = useState(false);
 
   // Add new state for color cycling
-  const [loaderColor, setLoaderColor] = useState("#468BFF");
+  const [loaderColor, setLoaderColor] = useState("#0078D2");
   
   // Add useEffect for color cycling
   useEffect(() => {
     if (!isResearching) return;
     
     const colors = [
-      "#468BFF", // Blue
-      "#8FBCFA", // Light Blue
-      "#FE363B", // Red
-      "#FF9A9D", // Light Red
-      "#FDBB11", // Yellow
-      "#F6D785", // Light Yellow
+      "#0078D2", // Bright blue
+      "#ffffff", // White
+      "#8A1C33", // Crimson
+      "#d9d9d9", // Light gray
     ];
     
     let currentIndex = 0;
@@ -237,14 +366,11 @@ function App() {
 
   const connectWebSocket = (jobId: string) => {
     console.log("Initializing WebSocket connection for job:", jobId);
-    
-    // Use the WS_URL directly if it's a full URL, otherwise construct it
-    const wsUrl = WS_URL.startsWith('wss://') || WS_URL.startsWith('ws://')
-      ? `${WS_URL}/research/ws/${jobId}`
-      : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${WS_URL}/research/ws/${jobId}`;
-    
+
+    const wsUrl = joinUrl(getActiveWsBase(), `/research/ws/${jobId}`);
+
     console.log("Connecting to WebSocket URL:", wsUrl);
-    
+
     try {
       const ws = new WebSocket(wsUrl);
 
@@ -294,6 +420,12 @@ function App() {
           readyState: ws.readyState,
           url: wsUrl
         });
+        if (switchToBrowserFallback()) {
+          console.log("Retrying WebSocket connection using fallback origin");
+          ws.close(1012, "Retrying with fallback origin");
+          connectWebSocket(jobId);
+          return;
+        }
         setError("WebSocket connection error - Check browser console for details");
         setIsResearching(false);
       };
@@ -692,7 +824,7 @@ function App() {
     setHasScrolledToStatus(false); // Reset scroll flag when starting new research
 
     try {
-      const url = `${API_URL}/research`;
+      const requestPath = '/research';
 
       // Format the company URL if provided
       const formattedCompanyUrl = formData.companyUrl
@@ -709,7 +841,7 @@ function App() {
         hq_location: formData.companyHq || undefined,
       };
 
-      const response = await fetch(url, {
+      const response = await fetchWithAutoFallback(requestPath, {
         method: "POST",
         mode: "cors",
         credentials: "omit",
@@ -746,7 +878,13 @@ function App() {
       }
     } catch (err) {
       console.log("Caught error:", err);
-      setError(err instanceof Error ? err.message : "Failed to start research");
+      let message = "Failed to start research";
+      if (err instanceof TypeError) {
+        message = "Unable to reach the research service. Please verify your connection or API URL.";
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+      setError(message);
       setIsResearching(false);
     }
   };
@@ -758,7 +896,7 @@ function App() {
     setIsGeneratingPdf(true);
     try {
       console.log("Generating PDF with company name:", originalCompanyName);
-      const response = await fetch(`${API_URL}/generate-pdf`, {
+      const response = await fetchWithAutoFallback('/generate-pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -794,7 +932,11 @@ function App() {
       
     } catch (error) {
       console.error('Error generating PDF:', error);
-      setError(error instanceof Error ? error.message : 'Failed to generate PDF');
+      if (error instanceof TypeError) {
+        setError("Unable to reach the PDF service. Please try again once the connection is restored.");
+      } else {
+        setError(error instanceof Error ? error.message : 'Failed to generate PDF');
+      }
     } finally {
       setIsGeneratingPdf(false);
     }
@@ -822,9 +964,9 @@ function App() {
 
   // Add these styles at the top of the component, before the return statement
   const glassStyle: GlassStyle = {
-    base: "backdrop-filter backdrop-blur-lg bg-white/80 border border-gray-200 shadow-xl",
-    card: "backdrop-filter backdrop-blur-lg bg-white/80 border border-gray-200 shadow-xl rounded-2xl p-6",
-    input: "backdrop-filter backdrop-blur-lg bg-white/80 border border-gray-200 shadow-xl pl-10 w-full rounded-lg py-3 px-4 text-gray-900 focus:border-[#468BFF]/50 focus:outline-none focus:ring-1 focus:ring-[#468BFF]/50 placeholder-gray-400 bg-white/80 shadow-none"
+    base: "backdrop-filter backdrop-blur-2xl bg-white/10 border border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.45)] text-white",
+    card: "backdrop-filter backdrop-blur-2xl bg-white/10 border border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.45)] rounded-2xl p-6 text-white",
+    input: "backdrop-filter backdrop-blur-xl bg-[#0B1831]/70 border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.45)] pl-10 w-full rounded-lg py-3 px-4 text-white focus:border-[#0078D2]/60 focus:outline-none focus:ring-1 focus:ring-[#0078D2]/50 placeholder-[#D9D9D9]/60"
   };
 
   // Add these to your existing styles
@@ -908,7 +1050,7 @@ function App() {
   // Add function to check for final report
   const checkForFinalReport = async (jobId: string) => {
     try {
-      const response = await fetch(`${API_URL}/research/status/${jobId}`);
+      const response = await fetchWithAutoFallback(`/research/status/${jobId}`);
       if (!response.ok) throw new Error('Failed to fetch status');
       
       const data = await response.json();
@@ -950,9 +1092,11 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white via-gray-50 to-white p-8 relative">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(70,139,255,0.35)_1px,transparent_0)] bg-[length:24px_24px] bg-center"></div>
-      <div className="max-w-5xl mx-auto space-y-8 relative">
+    <div className="min-h-screen relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0B1831] via-[#112449] to-[#8A1C33]"></div>
+      <div className="absolute inset-0 opacity-70 bg-[radial-gradient(circle_at_20%_20%,rgba(0,120,210,0.35),transparent_55%)]"></div>
+      <div className="absolute inset-0 opacity-60 bg-[radial-gradient(circle_at_80%_0%,rgba(138,28,51,0.35),transparent_60%)]"></div>
+      <div className="max-w-5xl mx-auto space-y-8 relative px-6 py-10">
         {/* Header Component */}
         <Header glassStyle={glassStyle.card} />
 
@@ -966,10 +1110,10 @@ function App() {
 
         {/* Error Message */}
         {error && (
-          <div 
-            className={`${glassStyle.card} border-[#FE363B]/30 bg-[#FE363B]/10 ${fadeInAnimation.fadeIn} ${isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'} font-['DM_Sans']`}
+          <div
+            className={`${glassStyle.card} border-[#8A1C33]/40 bg-[#8A1C33]/20 ${fadeInAnimation.fadeIn} ${isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'} font-['DM_Sans']`}
           >
-            <p className="text-[#FE363B]">{error}</p>
+            <p className="text-[#FFD3DC]">{error}</p>
           </div>
         )}
 
