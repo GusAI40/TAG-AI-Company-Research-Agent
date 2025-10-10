@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, FormEvent, ChangeEvent } from "react";
 import Header from './components/Header';
 import ResearchBriefings from './components/ResearchBriefings';
 import CurationExtraction from './components/CurationExtraction';
@@ -55,6 +55,26 @@ const getBrowserFallbacks = () => {
 };
 
 const browserFallbacks = getBrowserFallbacks();
+
+const toAbsoluteUrl = (value: string) => {
+  try {
+    return new URL(value);
+  } catch (error) {
+    if (isBrowser) {
+      try {
+        return new URL(value, window.location.origin);
+      } catch (innerError) {
+        return null;
+      }
+    }
+    return null;
+  }
+};
+
+const getUrlHost = (value: string) => {
+  const parsed = toAbsoluteUrl(value);
+  return parsed ? parsed.host : "";
+};
 
 const normalizeHttpBase = (value: string | undefined, fallback: string) => {
   const trimmed = value?.trim();
@@ -169,6 +189,7 @@ document.head.appendChild(dmSansStyle);
 
 function App() {
 
+  const bypassStorageKey = 'pitchguard.vercelBypassToken';
   const [apiBase, setApiBase] = useState(() => normalizeHttpBase(rawApiUrl, browserFallbacks.http));
   const [wsBase, setWsBase] = useState(() => normalizeWsBase(rawWsUrl, browserFallbacks.ws));
   const fallbackOriginsRef = useRef(browserFallbacks);
@@ -176,6 +197,17 @@ function App() {
     api: !rawApiUrl,
     ws: !rawWsUrl,
   });
+
+  const [vercelBypassToken, setVercelBypassToken] = useState<string>(() => {
+    if (!isBrowser) return '';
+    return window.localStorage.getItem(bypassStorageKey) ?? '';
+  });
+  const [bypassInputValue, setBypassInputValue] = useState<string>(() => {
+    if (!isBrowser) return '';
+    return window.localStorage.getItem(bypassStorageKey) ?? '';
+  });
+  const [vercelBypassStatus, setVercelBypassStatus] = useState<string | null>(null);
+  const bypassAppliedRef = useRef<Map<string, string>>(new Map());
 
   const getActiveApiBase = () => {
     if (usingFallbackRef.current.api && isBrowser) {
@@ -190,6 +222,15 @@ function App() {
     }
     return wsBase;
   };
+
+  useEffect(() => {
+    if (!isBrowser) return;
+    if (vercelBypassToken) {
+      window.localStorage.setItem(bypassStorageKey, vercelBypassToken);
+    } else {
+      window.localStorage.removeItem(bypassStorageKey);
+    }
+  }, [vercelBypassToken]);
 
   const switchToBrowserFallback = () => {
     if (!isBrowser) {
@@ -218,20 +259,141 @@ function App() {
     return switched;
   };
 
+  const applyVercelBypassCookie = async (targetUrl: string, token: string) => {
+    if (!isBrowser || !token) {
+      return false;
+    }
+
+    const parsedTarget = toAbsoluteUrl(targetUrl);
+    if (!parsedTarget) {
+      return false;
+    }
+
+    const origin = parsedTarget.origin;
+    const previousToken = bypassAppliedRef.current.get(origin);
+
+    if (previousToken === token) {
+      return true;
+    }
+
+    const bypassUrl = `${origin}/?x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=${encodeURIComponent(token)}`;
+
+    try {
+      const response = await fetch(bypassUrl, {
+        credentials: 'include',
+        mode: 'cors',
+      });
+
+      if (response.ok) {
+        bypassAppliedRef.current.set(origin, token);
+        return true;
+      }
+
+      console.warn('Bypass cookie request failed with status', response.status);
+      bypassAppliedRef.current.delete(origin);
+      return false;
+    } catch (error) {
+      console.warn('Bypass cookie request error', error);
+      bypassAppliedRef.current.delete(origin);
+      return false;
+    }
+  };
+
+  const buildRequestInit = (baseInit: RequestInit | undefined, includeCredentials: boolean) => {
+    if (!includeCredentials) {
+      return baseInit;
+    }
+
+    const nextInit: RequestInit = { ...(baseInit ?? {}) };
+    nextInit.credentials = (baseInit?.credentials ?? 'include') as RequestCredentials;
+    return nextInit;
+  };
+
+  const isVercelProtectionText = (text: string) =>
+    /x-vercel-protection-bypass/i.test(text) || /Authentication Required/i.test(text);
+
+  const handleProtectedResponse = async (
+    response: Response,
+    url: string,
+    baseInit?: RequestInit
+  ): Promise<Response> => {
+    if (response.status !== 401) {
+      return response;
+    }
+
+    const errorText = await response.clone().text().catch(() => '');
+
+    if (!isVercelProtectionText(errorText)) {
+      return response;
+    }
+
+    const hostLabel = getUrlHost(url);
+
+    if (!vercelBypassToken) {
+      setVercelBypassStatus(
+        hostLabel
+          ? `Protected deployment detected at ${hostLabel}. Enter a Vercel bypass token below to continue.`
+          : 'Protected deployment detected. Enter a Vercel bypass token below to continue.'
+      );
+      return response;
+    }
+
+    const applied = await applyVercelBypassCookie(url, vercelBypassToken);
+
+    if (!applied) {
+      setVercelBypassStatus(
+        hostLabel
+          ? `Unable to apply bypass token for ${hostLabel}. Confirm the token and try again.`
+          : 'Unable to apply bypass token. Confirm the token and try again.'
+      );
+      return response;
+    }
+
+    setVercelBypassStatus(
+      hostLabel
+        ? `Bypass token accepted for ${hostLabel}. Retrying request...`
+        : 'Bypass token accepted. Retrying request...'
+    );
+
+    const retryInit = buildRequestInit(baseInit, true);
+    const retryResponse = await fetch(url, retryInit);
+
+    if (retryResponse.ok) {
+      setVercelBypassStatus(
+        hostLabel ? `Bypass token active for ${hostLabel}.` : 'Bypass token active.'
+      );
+      return retryResponse;
+    }
+
+    if (retryResponse.status === 401) {
+      const retryText = await retryResponse.clone().text().catch(() => '');
+      if (isVercelProtectionText(retryText)) {
+        setVercelBypassStatus(
+          hostLabel
+            ? `Bypass token was rejected for ${hostLabel}. Confirm the token and try again.`
+            : 'Bypass token was rejected. Confirm the token and try again.'
+        );
+      }
+    }
+
+    return retryResponse;
+  };
+
   const fetchWithAutoFallback = async (path: string, init?: RequestInit) => {
     const activeApiBase = getActiveApiBase();
     const targetUrl = joinUrl(activeApiBase, path);
     const shouldForceCredentials =
       isBrowser && usingFallbackRef.current.api && activeApiBase === browserFallbacks.http;
 
-    const requestInit: RequestInit | undefined = shouldForceCredentials
-      ? { ...(init ?? {}), credentials: (init?.credentials ?? 'include') as RequestCredentials }
-      : init;
+    const includeCredentials = shouldForceCredentials || Boolean(vercelBypassToken);
+
+    const requestInit = buildRequestInit(init, includeCredentials);
 
     console.log("Issuing request to:", targetUrl);
 
     try {
-      return await fetch(targetUrl, requestInit);
+      const response = await fetch(targetUrl, requestInit);
+      return handleProtectedResponse(response, targetUrl, requestInit);
     } catch (error) {
       console.warn("Fetch failed for URL:", targetUrl, error);
       if (error instanceof TypeError && switchToBrowserFallback()) {
@@ -239,25 +401,25 @@ function App() {
         const fallbackUrl = joinUrl(fallbackApiBase, path);
         const fallbackShouldForceCredentials =
           isBrowser && usingFallbackRef.current.api && fallbackApiBase === browserFallbacks.http;
-        const fallbackInit: RequestInit | undefined = fallbackShouldForceCredentials
-          ? { ...(init ?? {}), credentials: (init?.credentials ?? 'include') as RequestCredentials }
-          : init;
+        const fallbackIncludeCredentials = fallbackShouldForceCredentials || Boolean(vercelBypassToken);
+        const fallbackInit = buildRequestInit(init, fallbackIncludeCredentials);
         console.log("Retrying request with fallback origin:", fallbackUrl);
-        return fetch(fallbackUrl, fallbackInit);
+        const fallbackResponse = await fetch(fallbackUrl, fallbackInit);
+        return handleProtectedResponse(fallbackResponse, fallbackUrl, fallbackInit);
       }
       throw error;
     }
   };
 
   const interpretErrorResponse = async (response: Response) => {
-    const errorText = await response.text().catch(() => '');
+    const errorText = await response.clone().text().catch(() => '');
     console.log("Error response:", errorText);
 
     if (response.status === 401) {
       const isVercelProtection = /x-vercel-protection-bypass/i.test(errorText) || /Authentication Required/i.test(errorText);
       if (isVercelProtection) {
         return new Error(
-          "This deployment is protected. Provide a Vercel bypass token or configure VITE_API_URL/VITE_WS_URL to a reachable backend."
+          "This deployment is protected. Enter a Vercel bypass token in the access panel above or configure VITE_API_URL/VITE_WS_URL to a reachable backend."
         );
       }
       return new Error("Authentication failed. Please verify your credentials or bypass token.");
@@ -374,9 +536,56 @@ function App() {
     return () => clearInterval(interval);
   }, [isResearching]);
 
+  const handleBypassInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setBypassInputValue(event.target.value);
+  };
+
+  const handleClearBypassToken = () => {
+    setBypassInputValue('');
+    setVercelBypassToken('');
+    bypassAppliedRef.current.clear();
+    setVercelBypassStatus('Bypass token cleared.');
+  };
+
+  const handleBypassTokenSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+
+    const trimmedToken = bypassInputValue.trim();
+    setVercelBypassToken(trimmedToken);
+    bypassAppliedRef.current.clear();
+
+    if (!trimmedToken) {
+      setVercelBypassStatus('Bypass token cleared.');
+      return;
+    }
+
+    const activeBase = getActiveApiBase() || browserFallbacks.http;
+    const targetBase = activeBase || (isBrowser ? window.location.origin : '');
+
+    if (!targetBase) {
+      setVercelBypassStatus('Unable to determine the active API host.');
+      return;
+    }
+
+    const applied = await applyVercelBypassCookie(targetBase, trimmedToken);
+    const hostLabel = getUrlHost(targetBase);
+
+    if (applied) {
+      setVercelBypassStatus(
+        hostLabel ? `Bypass token active for ${hostLabel}.` : 'Bypass token active.'
+      );
+    } else {
+      setVercelBypassStatus(
+        hostLabel
+          ? `Unable to apply bypass token for ${hostLabel}. Confirm the token and try again.`
+          : 'Unable to apply bypass token. Confirm the token and try again.'
+      );
+    }
+  };
+
   const resetResearch = () => {
     setIsResetting(true);
-    
+
     // Use setTimeout to create a smooth transition
     setTimeout(() => {
       setStatus(null);
@@ -1143,6 +1352,67 @@ function App() {
 
       <div className="equilibrium-shell">
         <Header glassStyle={glassStyle.card} />
+
+        <form
+          onSubmit={handleBypassTokenSubmit}
+          className={`${glassStyle.card} equilibrium-panel equilibrium-panel--compact space-y-4 font-['DM_Sans']`}
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="space-y-2 md:max-w-2xl">
+              <h2 className="text-lg font-semibold text-white">Protected deployment access</h2>
+              <p className="text-sm text-[#D9D9D9]/80">
+                If the backend is protected by Vercel deployment safeguards, paste the bypass token provided by the
+                maintainer. PitchGuard will store it locally and retry requests with the required cookie.
+              </p>
+              <p className="text-xs text-[#D9D9D9]/70">
+                Active API host:&nbsp;
+                <span className="text-[#FFFFFF]">
+                  {(() => {
+                    const activeBase = getActiveApiBase();
+                    if (activeBase) {
+                      return getUrlHost(activeBase) || activeBase;
+                    }
+                    if (isBrowser) {
+                      return window.location.host;
+                    }
+                    return 'local-runtime';
+                  })()}
+                </span>
+                {usingFallbackRef.current.api ? ' (browser origin fallback)' : ''}
+              </p>
+              {vercelBypassStatus && (
+                <p className="text-xs text-[#FFD3DC]">{vercelBypassStatus}</p>
+              )}
+            </div>
+
+            <div className="flex w-full flex-col gap-3 md:w-96">
+              <input
+                type="text"
+                value={bypassInputValue}
+                onChange={handleBypassInputChange}
+                placeholder="Paste Vercel bypass token"
+                className="equilibrium-input text-sm text-white placeholder:text-[#D9D9D9]/50"
+              />
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="submit"
+                  className="equilibrium-chip w-full justify-center gap-2 px-6 py-3 text-sm font-semibold border-[#0078D2]/45 bg-[#0078D2]/30 text-white transition-all duration-300 hover:border-[#79C1FF]/60 hover:bg-[#0078D2]/45"
+                >
+                  Apply token
+                </button>
+                {vercelBypassToken && (
+                  <button
+                    type="button"
+                    onClick={handleClearBypassToken}
+                    className="equilibrium-chip w-full justify-center gap-2 px-6 py-3 text-sm font-medium border-white/20 bg-white/5 text-[#D9D9D9] transition-all duration-300 hover:border-white/40 hover:bg-white/10"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </form>
 
         <ResearchForm
           onSubmit={handleFormSubmit}
