@@ -86,6 +86,13 @@ class PerplexityResearchRequest(BaseModel):
     hq_location: str | None = None
     focus: list[str] | None = None
 
+
+class ChatKitSessionRequest(BaseModel):
+    """Payload for creating a ChatKit client session."""
+
+    device_id: str | None = None
+    thread_id: str | None = None
+
 @app.options("/research")
 async def preflight():
     response = JSONResponse(content=None, status_code=200)
@@ -142,6 +149,53 @@ async def research_perplexity(data: PerplexityResearchRequest):
         raise HTTPException(status_code=500, detail="Perplexity lookup failed") from exc
 
     return {"status": "completed", "result": result}
+
+
+@app.post("/chatkit/session")
+async def create_chatkit_session(payload: ChatKitSessionRequest):
+    """Create a ChatKit session client secret for embedded chat widgets."""
+
+    workflow_id = os.getenv("CHATKIT_WORKFLOW_ID")
+    if not workflow_id:
+        raise HTTPException(
+            status_code=500,
+            detail="ChatKit workflow ID is not configured. Set CHATKIT_WORKFLOW_ID to enable the chat widget.",
+        )
+
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(
+            status_code=500,
+            detail="OpenAI API key is required to create ChatKit sessions. Set OPENAI_API_KEY.",
+        )
+
+    try:
+        from openai import OpenAI
+    except ImportError as exc:  # pragma: no cover - optional dependency guard
+        raise HTTPException(status_code=500, detail="OpenAI SDK is not installed on the server.") from exc
+
+    client = OpenAI(api_key=api_key)
+
+    try:
+        session = client.chatkit.sessions.create(
+            workflow={"id": workflow_id},
+            user=payload.device_id or str(uuid.uuid4()),
+            thread=payload.thread_id,
+        )
+    except AttributeError as exc:  # pragma: no cover - library version mismatch
+        raise HTTPException(
+            status_code=501,
+            detail="The installed OpenAI SDK does not support ChatKit sessions. Upgrade to a version that includes chatkit support.",
+        ) from exc
+    except Exception as exc:  # pragma: no cover - upstream error handling
+        logger.error("Failed to create ChatKit session: %s", exc, exc_info=True)
+        raise HTTPException(status_code=502, detail="ChatKit session creation failed.") from exc
+
+    if not getattr(session, "client_secret", None):
+        raise HTTPException(status_code=502, detail="ChatKit session response did not include a client secret.")
+
+    return {"client_secret": session.client_secret}
+
 
 async def process_research(job_id: str, data: ResearchRequest):
     try:

@@ -26,3 +26,8 @@
 - Updated backend connectivity docs to reflect the Perplexity-only architecture and documented the required environment variables.
 - Swapped the research edge function to Vercel's supported `nodejs` runtime to keep deployments green after removing Fly.io.
 - Extended the agent workflow with a ReAct reasoning trace, updated schemas with Zod validation, and surfaced the step-by-step reasoning in the UI for transparency.
+
+## 2025-03-22
+- Added a FastAPI endpoint at `/chatkit/session` that brokers ChatKit client secrets using the OpenAI workflow ID and API key.
+- Documented the self-hosted ChatKit flow in `docs/chatkit-integration.md`, including environment variables, frontend wiring, and operational guidance.
+- Ensured the endpoint emits actionable diagnostics when configuration or SDK support is missing to streamline operator debugging.
