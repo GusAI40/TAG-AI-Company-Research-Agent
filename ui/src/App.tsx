@@ -963,10 +963,11 @@ function App() {
   // Add EnrichmentProgress component
 
   // Add these styles at the top of the component, before the return statement
+  const glassSurface = "equilibrium-card text-white";
   const glassStyle: GlassStyle = {
-    base: "backdrop-filter backdrop-blur-2xl bg-white/10 border border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.45)] text-white",
-    card: "backdrop-filter backdrop-blur-2xl bg-white/10 border border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.45)] rounded-2xl p-6 text-white",
-    input: "backdrop-filter backdrop-blur-xl bg-[#0B1831]/70 border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.45)] pl-10 w-full rounded-lg py-3 px-4 text-white focus:border-[#0078D2]/60 focus:outline-none focus:ring-1 focus:ring-[#0078D2]/50 placeholder-[#D9D9D9]/60"
+    base: glassSurface,
+    card: glassSurface,
+    input: "equilibrium-input"
   };
 
   // Add these to your existing styles
@@ -1092,32 +1093,30 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0B1831] via-[#112449] to-[#8A1C33]"></div>
-      <div className="absolute inset-0 opacity-70 bg-[radial-gradient(circle_at_20%_20%,rgba(0,120,210,0.35),transparent_55%)]"></div>
-      <div className="absolute inset-0 opacity-60 bg-[radial-gradient(circle_at_80%_0%,rgba(138,28,51,0.35),transparent_60%)]"></div>
-      <div className="max-w-5xl mx-auto space-y-8 relative px-6 py-10">
-        {/* Header Component */}
+    <div className="equilibrium-bg min-h-screen overflow-hidden relative">
+      <div className="equilibrium-grid" aria-hidden="true" />
+      <div className="equilibrium-orbit equilibrium-orbit--left" aria-hidden="true" />
+      <div className="equilibrium-orbit equilibrium-orbit--right" aria-hidden="true" />
+      <div className="equilibrium-orbit equilibrium-orbit--bottom" aria-hidden="true" />
+
+      <div className="equilibrium-shell">
         <Header glassStyle={glassStyle.card} />
 
-        {/* Form Section */}
-        <ResearchForm 
+        <ResearchForm
           onSubmit={handleFormSubmit}
           isResearching={isResearching}
           glassStyle={glassStyle}
           loaderColor={loaderColor}
         />
 
-        {/* Error Message */}
         {error && (
           <div
-            className={`${glassStyle.card} border-[#8A1C33]/40 bg-[#8A1C33]/20 ${fadeInAnimation.fadeIn} ${isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'} font-['DM_Sans']`}
+            className={`${glassStyle.card} equilibrium-panel equilibrium-panel--compact ${fadeInAnimation.fadeIn} ${isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'} font-['DM_Sans']`}
           >
             <p className="text-[#FFD3DC]">{error}</p>
           </div>
         )}
 
-        {/* Status Box */}
         <ResearchStatus
           status={status}
           error={error}
@@ -1129,8 +1128,7 @@ function App() {
           statusRef={statusRef}
         />
 
-        {/* Progress Components Container */}
-        <div className="space-y-12 transition-all duration-500 ease-in-out">
+        <div className="equilibrium-stack transition-all duration-500 ease-in-out">
           {renderProgressComponents()}
         </div>
       </div>

@@ -21,12 +21,12 @@ const ResearchBriefings: React.FC<ResearchBriefingsProps> = ({
   onToggleExpand,
   isResetting
 }) => {
-  const glassStyle = "backdrop-filter backdrop-blur-2xl bg-white/10 border border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.45)] text-white";
-  const cardGlassStyle = "backdrop-filter backdrop-blur-xl bg-white/10 shadow-sm text-white";
+  const glassStyle = "equilibrium-card text-white";
+  const cardGlassStyle = "equilibrium-subpanel text-white";
 
   return (
-    <div 
-      className={`${glassStyle} rounded-2xl p-6 transition-all duration-300 ease-in-out ${
+    <div
+      className={`${glassStyle} equilibrium-panel transition-all duration-300 ease-in-out ${
         isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'
       } font-['DM_Sans']`}
     >
@@ -51,13 +51,13 @@ const ResearchBriefings: React.FC<ResearchBriefingsProps> = ({
       }`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 px-1">
           {['company', 'industry', 'financial', 'news'].map((category) => (
-            <div 
-              key={category} 
-              className={`${cardGlassStyle} rounded-lg p-4 transition-all duration-500 ease-in-out relative ${
+            <div
+              key={category}
+              className={`${cardGlassStyle} p-4 transition-all duration-500 ease-in-out relative ${
                 briefingStatus[category as keyof BriefingStatus]
-                  ? 'border border-[#0078D2] bg-gradient-to-br from-[#0078D2]/20 to-transparent shadow-md'
-                  : 'border border-white/15 bg-white/5 hover:border-white/30 hover:shadow-sm'
-              } backdrop-blur-sm group`}
+                  ? 'border border-[#0078D2]/45 bg-gradient-to-br from-[#0078D2]/15 to-transparent shadow-lg'
+                  : 'border border-white/10 bg-white/5 hover:border-white/25'
+              } group`}
             >
               {/* Background decoration element (only visible when active) */}
               <div 

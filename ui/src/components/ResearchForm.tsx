@@ -119,7 +119,7 @@ const ResearchForm: React.FC<ResearchFormProps> = ({
   };
 
   return (
-    <div className="relative" ref={formRef}>
+    <div className="relative equilibrium-section" ref={formRef}>
       {/* Example Suggestion */}
       <ExamplePopup 
         visible={showExampleSuggestion}
@@ -129,7 +129,7 @@ const ResearchForm: React.FC<ResearchFormProps> = ({
       />
 
       {/* Main Form */}
-      <div className={`${glassStyle.card} bg-white/10 border-white/15 shadow-[0_30px_80px_rgba(0,0,0,0.45)]`}>
+      <div className={`${glassStyle.card} equilibrium-panel`}>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Company Name */}
@@ -238,7 +238,7 @@ const ResearchForm: React.FC<ResearchFormProps> = ({
           <button
             type="submit"
             disabled={isResearching || !formData.companyName}
-            className="relative group w-fit mx-auto block overflow-hidden rounded-lg bg-[#0078D2] border border-[#79C1FF]/60 text-white transition-all duration-500 hover:bg-[#2F8FE6] disabled:opacity-50 disabled:cursor-not-allowed px-12 font-['DM_Sans'] shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
+            className="relative group equilibrium-chip w-full md:w-auto justify-center gap-2 px-12 py-3 text-lg font-semibold border-[#0078D2]/45 bg-[#0078D2]/30 text-white transition-all duration-500 hover:border-[#79C1FF]/60 hover:bg-[#0078D2]/40 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
             <div className="relative flex items-center justify-center py-3.5">

@@ -10,12 +10,11 @@ const ResearchQueries: React.FC<ResearchQueriesProps> = ({
   isResetting,
   glassStyle
 }) => {
-  const glassCardStyle = `${glassStyle} rounded-2xl p-6`;
   const fadeInAnimation = "transition-all duration-300 ease-in-out";
 
   return (
-    <div 
-      className={`${glassCardStyle} ${fadeInAnimation} ${isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'} font-['DM_Sans']`}
+    <div
+      className={`${glassStyle} equilibrium-panel ${fadeInAnimation} ${isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'} font-['DM_Sans']`}
     >
       <div 
         className="flex items-center justify-between cursor-pointer"
@@ -36,9 +35,9 @@ const ResearchQueries: React.FC<ResearchQueriesProps> = ({
       <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
         isExpanded ? 'mt-4 max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
       }`}>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {['company', 'industry', 'financial', 'news'].map((category) => (
-            <div key={category} className={`${glassStyle} rounded-xl p-3 bg-white/5`}>
+            <div key={category} className={`equilibrium-subpanel p-4`}>
               <h3 className="text-base font-medium text-white mb-3 capitalize">
                 {category.charAt(0).toUpperCase() + category.slice(1)} Queries
               </h3>
@@ -47,17 +46,17 @@ const ResearchQueries: React.FC<ResearchQueriesProps> = ({
                 {Object.entries(streamingQueries)
                   .filter(([key]) => key.startsWith(category))
                   .map(([key, query]) => (
-                    <div key={key} className="backdrop-filter backdrop-blur-lg bg-[#0078D2]/20 border border-[#0078D2]/40 rounded-lg p-2 stream-fade">
-                      <span className="text-[#D9D9D9]">{query.text}</span>
-                      <span className="animate-pulse ml-1 text-[#0078D2]">|</span>
+                    <div key={key} className="equilibrium-chip w-full justify-between border-[#0078D2]/35 bg-[#0078D2]/15 px-4 py-3 stream-fade">
+                      <span className="text-[#D9D9D9] text-sm">{query.text}</span>
+                      <span className="animate-pulse ml-3 text-[#79C1FF]">|</span>
                     </div>
                   ))}
                 {/* Then show completed queries */}
                 {queries
                   .filter((q) => q.category.startsWith(category))
                   .map((query, idx) => (
-                    <div key={idx} className="backdrop-filter backdrop-blur-lg bg-white/5 border border-white/10 rounded-lg p-2 stream-fade">
-                      <span className="text-[#D9D9D9]">{query.text}</span>
+                    <div key={idx} className="equilibrium-chip w-full justify-start border-white/15 bg-white/10 px-4 py-3 stream-fade">
+                      <span className="text-[#D9D9D9] text-sm">{query.text}</span>
                     </div>
                   ))}
               </div>

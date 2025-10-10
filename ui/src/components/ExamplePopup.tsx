@@ -89,9 +89,9 @@ const ExamplePopup: React.FC<ExamplePopupProps> = ({
   return (
     <div
       ref={exampleRef}
-      className={`absolute -top-14 left-8 ${glassStyle.card} bg-white/10 border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.45)] cursor-pointer z-10
+      className={`absolute -top-14 left-8 ${glassStyle.card} equilibrium-chip cursor-pointer z-10
                  flex items-center px-3 py-2 space-x-2 transform transition-all duration-300
-                 hover:shadow-[0_30px_80px_rgba(0,0,0,0.5)] hover:bg-white/15 hover:-translate-y-1 hover:border-white/30 group`}
+                 hover:-translate-y-1 group`}
       onClick={() => onExampleSelect(EXAMPLE_COMPANIES[selectedExample])}
       style={{
         borderTopLeftRadius: '12px',

@@ -12,7 +12,6 @@ const ResearchStatus: React.FC<ResearchStatusProps> = ({
   loaderColor,
   statusRef
 }) => {
-  const glassCardStyle = `${glassStyle.base} rounded-2xl p-6`;
   const fadeInAnimation = "transition-all duration-300 ease-in-out";
 
   if (!status) return null;
@@ -20,28 +19,28 @@ const ResearchStatus: React.FC<ResearchStatusProps> = ({
   return (
     <div
       ref={statusRef}
-      className={`${glassCardStyle} ${fadeInAnimation} ${isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'} bg-white/10 border-white/15 font-['DM_Sans']`}
+      className={`${glassStyle.base} equilibrium-panel equilibrium-panel--compact ${fadeInAnimation} ${isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'} font-['DM_Sans']`}
     >
       <div className="flex items-center space-x-4">
         <div className="flex-shrink-0">
           {error ? (
-            <div className={`${glassStyle.base} p-2 rounded-full bg-[#8A1C33]/20 border-[#8A1C33]/40`}>
+            <div className={`equilibrium-chip bg-[#8A1C33]/25 border-[#8A1C33]/40`}>
               <XCircle className="h-5 w-5 text-[#FFD3DC]" />
             </div>
           ) : status?.step === "Complete" || isComplete ? (
-            <div className={`${glassStyle.base} p-2 rounded-full bg-white/10 border-white/30`}>
+            <div className={`equilibrium-chip bg-white/10 border-white/30`}>
               <CheckCircle2 className="h-5 w-5 text-white" />
             </div>
           ) : currentPhase === 'search' || currentPhase === 'enrichment' || (status?.step === "Processing" && status.message.includes("scraping")) ? (
-            <div className={`${glassStyle.base} p-2 rounded-full bg-[#0078D2]/20 border-[#0078D2]/40`}>
+            <div className={`equilibrium-chip bg-[#0078D2]/20 border-[#0078D2]/40`}>
               <Loader2 className="h-5 w-5 animate-spin loader-icon" style={{ stroke: loaderColor }} />
             </div>
           ) : currentPhase === 'briefing' ? (
-            <div className={`${glassStyle.base} p-2 rounded-full bg-[#0078D2]/20 border-[#0078D2]/40`}>
+            <div className={`equilibrium-chip bg-[#0078D2]/20 border-[#0078D2]/40`}>
               <Loader2 className="h-5 w-5 animate-spin loader-icon" style={{ stroke: loaderColor }} />
             </div>
           ) : (
-            <div className={`${glassStyle.base} p-2 rounded-full bg-[#0078D2]/20 border-[#0078D2]/40`}>
+            <div className={`equilibrium-chip bg-[#0078D2]/20 border-[#0078D2]/40`}>
               <Loader2 className="h-5 w-5 animate-spin loader-icon" style={{ stroke: loaderColor }} />
             </div>
           )}

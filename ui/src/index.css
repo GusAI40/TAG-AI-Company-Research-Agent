@@ -14,6 +14,10 @@
   --color-glass-bg: rgba(11, 24, 49, 0.55);
   --color-glass-border: rgba(255, 255, 255, 0.14);
   --color-ember: #8a1c33;
+  --equilibrium-shadow: 0 32px 80px -42px rgba(3, 13, 35, 0.9);
+  --equilibrium-shadow-hover: 0 42px 100px -46px rgba(7, 26, 58, 0.95);
+  --equilibrium-panel-gap: clamp(1.25rem, 2.5vw, 1.75rem);
+  --equilibrium-panel-padding: clamp(1.75rem, 3.5vw, 2.75rem);
 }
 
 @layer base {
@@ -22,9 +26,7 @@
     font-family: "DM Sans", sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    background: radial-gradient(circle at 20% 20%, rgba(0, 120, 210, 0.25), transparent 55%),
-      radial-gradient(circle at 80% 10%, rgba(138, 28, 51, 0.35), transparent 60%),
-      linear-gradient(135deg, #0b1831 0%, #0b1831 45%, #8a1c33 120%);
+    background: linear-gradient(135deg, #050b16 0%, #0b1831 45%, #102347 78%, #8a1c33 130%);
     color: var(--color-text-primary);
     transition: background 0.6s ease, color 0.3s ease;
   }
@@ -89,19 +91,26 @@
   /* Theme toggle utility classes */
   .theme-toggle {
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem;
+    padding: 0.55rem;
     border-radius: 9999px;
-    background-color: var(--color-bg-secondary);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(0, 120, 210, 0.18));
     color: var(--color-text-secondary);
-    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 18px 42px -30px rgba(0, 0, 0, 0.8);
+    transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease, color 0.35s ease;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .theme-toggle:hover {
-    background-color: var(--color-accent);
-    color: white;
+    background: linear-gradient(135deg, rgba(121, 193, 255, 0.4), rgba(0, 120, 210, 0.25));
+    border-color: rgba(121, 193, 255, 0.45);
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 26px 54px -32px rgba(3, 15, 40, 0.85);
   }
 }
 
@@ -125,4 +134,297 @@
 
 .stream-fade {
   animation: streamFadeIn 0.85s ease-out forwards;
+}
+
+.equilibrium-bg {
+  position: relative;
+  min-height: 100vh;
+  color: var(--color-text-primary);
+  background: radial-gradient(circle at 15% 15%, rgba(0, 120, 210, 0.22), transparent 55%),
+    radial-gradient(circle at 80% 0%, rgba(138, 28, 51, 0.32), transparent 60%),
+    linear-gradient(135deg, rgba(5, 12, 24, 0.95) 0%, rgba(11, 24, 49, 0.92) 48%, rgba(16, 40, 78, 0.9) 72%, rgba(138, 28, 51, 0.82) 120%);
+}
+
+.equilibrium-bg::before,
+.equilibrium-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.equilibrium-bg::before {
+  background: linear-gradient(155deg, rgba(121, 193, 255, 0.12), transparent 35%, rgba(138, 28, 51, 0.14) 65%, transparent 85%);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+
+.equilibrium-bg::after {
+  background: radial-gradient(circle at 20% 80%, rgba(0, 120, 210, 0.16), transparent 62%),
+    radial-gradient(circle at 82% 72%, rgba(138, 28, 51, 0.22), transparent 60%);
+  opacity: 0.65;
+  filter: saturate(120%);
+}
+
+.equilibrium-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: clamp(90px, 10vw, 140px) clamp(90px, 10vw, 140px);
+  mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.55), transparent 75%);
+  opacity: 0.45;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+}
+
+.equilibrium-orbit {
+  position: absolute;
+  width: clamp(22rem, 40vw, 32rem);
+  height: clamp(22rem, 40vw, 32rem);
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(0px);
+  opacity: 0.62;
+  mix-blend-mode: screen;
+}
+
+.equilibrium-orbit--left {
+  top: -12rem;
+  left: -8rem;
+  background: radial-gradient(circle at 30% 35%, rgba(0, 120, 210, 0.38), transparent 70%);
+}
+
+.equilibrium-orbit--right {
+  top: -10rem;
+  right: -6rem;
+  background: radial-gradient(circle at 70% 30%, rgba(138, 28, 51, 0.38), transparent 72%);
+}
+
+.equilibrium-orbit--bottom {
+  bottom: -14rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(circle at 50% 50%, rgba(0, 120, 210, 0.28), transparent 75%);
+  opacity: 0.5;
+}
+
+.equilibrium-shell {
+  position: relative;
+  width: min(92vw, 1120px);
+  margin-inline: auto;
+  padding: clamp(3rem, 6vw, 5.5rem) clamp(1.5rem, 4vw, 3rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.5rem, 4vw, 3.5rem);
+}
+
+.equilibrium-stack {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 3.2vw, 3rem);
+}
+
+.equilibrium-section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.equilibrium-card {
+  position: relative;
+  border-radius: clamp(20px, 4vw, 28px);
+  background: linear-gradient(150deg, rgba(15, 31, 62, 0.82), rgba(10, 24, 49, 0.75));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: var(--equilibrium-shadow);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  overflow: hidden;
+  transition: transform 0.45s ease, box-shadow 0.45s ease, border-color 0.45s ease;
+}
+
+.equilibrium-card::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.65;
+}
+
+.equilibrium-card::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: radial-gradient(circle at 30% 20%, rgba(0, 120, 210, 0.28), transparent 65%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+
+.equilibrium-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(121, 193, 255, 0.35);
+  box-shadow: var(--equilibrium-shadow-hover);
+}
+
+.equilibrium-card:hover::after {
+  opacity: 1;
+}
+
+.equilibrium-panel {
+  padding: var(--equilibrium-panel-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--equilibrium-panel-gap);
+}
+
+.equilibrium-panel--compact {
+  --equilibrium-panel-padding: clamp(1.25rem, 2.8vw, 1.85rem);
+  --equilibrium-panel-gap: clamp(1rem, 2vw, 1.35rem);
+}
+
+.equilibrium-panel--flush {
+  padding: clamp(1.25rem, 3vw, 1.75rem) clamp(1.25rem, 3vw, 1.75rem) clamp(1.75rem, 3vw, 2.25rem);
+}
+
+.equilibrium-divider {
+  width: clamp(120px, 18vw, 180px);
+  height: 2px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, transparent, rgba(121, 193, 255, 0.6), transparent);
+  opacity: 0.9;
+}
+
+.equilibrium-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 999px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, rgba(0, 120, 210, 0.32), rgba(138, 28, 51, 0.28));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 18px 52px -36px rgba(3, 15, 34, 0.85);
+  color: var(--color-text-primary);
+}
+
+.equilibrium-header {
+  position: relative;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2vw, 1.5rem);
+  align-items: center;
+}
+
+.equilibrium-header__actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.equilibrium-title {
+  font-size: clamp(2.4rem, 5vw, 3.5rem);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+  background: linear-gradient(92deg, #ffffff 0%, #79c1ff 45%, #d9d9d9 100%);
+  -webkit-background-clip: text;
+  color: transparent;
+  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.equilibrium-subtext {
+  max-width: 46rem;
+  margin: 0 auto;
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  line-height: 1.7;
+  color: rgba(217, 217, 217, 0.82);
+}
+
+.equilibrium-input {
+  position: relative;
+  width: 100%;
+  background: linear-gradient(150deg, rgba(15, 31, 62, 0.86), rgba(10, 24, 49, 0.78));
+  border-radius: 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--color-text-primary);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 40px -28px rgba(0, 0, 0, 0.75);
+  transition: border-color 0.35s ease, background 0.45s ease, box-shadow 0.45s ease;
+}
+
+.equilibrium-input:hover,
+.equilibrium-input:focus {
+  border-color: rgba(0, 120, 210, 0.55);
+  box-shadow: 0 18px 46px -26px rgba(0, 120, 210, 0.55);
+  background: linear-gradient(150deg, rgba(16, 34, 66, 0.92), rgba(10, 24, 49, 0.82));
+}
+
+.equilibrium-input::placeholder {
+  color: rgba(217, 217, 217, 0.55);
+}
+
+.equilibrium-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(0, 120, 210, 0.12));
+  box-shadow: 0 16px 32px -26px rgba(3, 13, 32, 0.85);
+  transition: transform 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.equilibrium-chip:hover {
+  transform: translateY(-2px);
+  border-color: rgba(121, 193, 255, 0.45);
+  box-shadow: 0 24px 48px -30px rgba(4, 18, 40, 0.85);
+}
+
+.equilibrium-subpanel {
+  position: relative;
+  border-radius: 1.1rem;
+  background: linear-gradient(150deg, rgba(18, 35, 66, 0.74), rgba(11, 24, 49, 0.62));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 22px 54px -38px rgba(5, 15, 36, 0.8);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  transition: transform 0.4s ease, border-color 0.45s ease, box-shadow 0.45s ease;
+}
+
+.equilibrium-subpanel::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+.equilibrium-subpanel:hover {
+  transform: translateY(-3px);
+  border-color: rgba(121, 193, 255, 0.38);
+  box-shadow: 0 28px 56px -34px rgba(3, 15, 40, 0.85);
+}
+
+@media (max-width: 640px) {
+  .equilibrium-header__actions {
+    position: static;
+    order: 3;
+  }
+
+  .equilibrium-shell {
+    gap: clamp(2rem, 8vw, 2.75rem);
+  }
 }

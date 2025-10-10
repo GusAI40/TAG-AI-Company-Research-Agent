@@ -36,26 +36,27 @@ const ResearchReport: React.FC<ResearchReportProps> = ({
   if (!output || !output.details) return null;
 
   return (
-    <div 
-      className={`${glassStyle.card} ${fadeInAnimation.fadeIn} ${isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'} font-['DM_Sans']`}
+    <div
+      className={`${glassStyle.card} equilibrium-panel equilibrium-panel--flush ${fadeInAnimation.fadeIn} ${isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'} font-['DM_Sans']`}
     >
-      <div className="flex justify-end gap-2 mb-4">
+      <div className="flex flex-wrap justify-end gap-3 mb-6">
         {output?.details?.report && (
           <>
             <button
               onClick={onCopyToClipboard}
-              className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#0078D2] text-white hover:bg-[#2F8FE6] transition-all duration-200"
+              className={`equilibrium-chip gap-2 px-5 py-2.5 text-sm font-medium tracking-wide border-[#0078D2]/40 bg-[#0078D2]/25 hover:border-[#79C1FF]/55 hover:bg-[#0078D2]/35 transition-all duration-300`}
             >
               {isCopied ? (
                 <Check className="h-5 w-5" />
               ) : (
                 <Copy className="h-5 w-5" />
               )}
+              <span>{isCopied ? 'Copied' : 'Copy'}</span>
             </button>
             <button
               onClick={onGeneratePdf}
               disabled={isGeneratingPdf}
-              className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#8A1C33] text-white hover:bg-[#A32B45] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`equilibrium-chip gap-2 px-5 py-2.5 text-sm font-medium tracking-wide border-[#8A1C33]/45 bg-[#8A1C33]/25 hover:border-[#FF8AA3]/55 hover:bg-[#8A1C33]/35 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed`}
             >
               {isGeneratingPdf ? (
                 <>
@@ -65,7 +66,7 @@ const ResearchReport: React.FC<ResearchReportProps> = ({
               ) : (
                 <>
                   <Download className="h-5 w-5" />
-                  <span className="ml-2">PDF</span>
+                  <span>PDF</span>
                 </>
               )}
             </button>

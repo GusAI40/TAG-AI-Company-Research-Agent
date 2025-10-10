@@ -23,12 +23,11 @@ const CurationExtraction: React.FC<CurationExtractionProps> = ({
   isResetting,
   loaderColor
 }) => {
-  const glassStyle = "backdrop-filter backdrop-blur-2xl bg-white/10 border border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.45)] text-white";
-  const glassCardStyle = `${glassStyle} rounded-2xl p-6`;
+  const glassStyle = "equilibrium-card text-white";
 
   return (
-    <div 
-      className={`${glassCardStyle} transition-all duration-300 ease-in-out ${
+    <div
+      className={`${glassStyle} equilibrium-panel transition-all duration-300 ease-in-out ${
         isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'
       }`}
     >
@@ -51,11 +50,11 @@ const CurationExtraction: React.FC<CurationExtractionProps> = ({
       <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
         isExpanded ? 'mt-4 max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
       }`}>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {['company', 'industry', 'financial', 'news'].map((category) => {
             const counts = enrichmentCounts?.[category as keyof EnrichmentCounts];
             return (
-              <div key={category} className="backdrop-blur-2xl bg-white/5 border border-white/15 rounded-xl p-3 shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
+              <div key={category} className="equilibrium-subpanel p-4">
                 <h3 className="text-sm font-medium text-[#D9D9D9] mb-2 capitalize">{category}</h3>
                 <div className="text-white stream-fade">
                   <div className="text-2xl font-bold mb-1">

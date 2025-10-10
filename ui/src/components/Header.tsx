@@ -62,19 +62,17 @@ const Header: React.FC<HeaderProps> = ({ glassStyle, title = 'Company Research A
   };
 
   return (
-    <div className="relative mb-16">
-      <div className="text-center pt-4">
-        <h1 className="text-[48px] font-medium bg-clip-text text-transparent bg-gradient-to-r from-white via-[#79C1FF] to-[#D9D9D9] font-['DM_Sans'] tracking-[-1px] leading-[52px] text-center mx-auto antialiased">
-          {title}
-        </h1>
-        <p className="text-[#D9D9D9] text-lg font-['DM_Sans'] mt-4 max-w-2xl mx-auto">
-          AI-native risk intelligence for the Ole Miss Finance Club—streaming live diligence and hidden risk scoring in real time.
-        </p>
-      </div>
-      <div className="absolute top-0 right-0 flex items-center space-x-4">
+    <header className="equilibrium-header">
+      <div className="equilibrium-header__actions">
         <ThemeToggle />
       </div>
-    </div>
+      <span className="equilibrium-badge">PitchGuard • Ole Miss Finance Club</span>
+      <h1 className="equilibrium-title">{title}</h1>
+      <p className="equilibrium-subtext">
+        AI-native risk intelligence for the Ole Miss Finance Club—streaming live diligence and hidden risk scoring in real time.
+      </p>
+      <div className="equilibrium-divider" />
+    </header>
   );
 };
 
