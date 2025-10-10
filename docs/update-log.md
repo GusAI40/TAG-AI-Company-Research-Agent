@@ -43,4 +43,4 @@
 - Introduced a LangChain-style orchestration pipeline (`lib/research-orchestrator.ts`) to validate inputs, call Perplexity, and trigger the OpenAI agents in a repeatable sequence.
 - Added an in-repo runnable implementation (`lib/langchain-lite.ts`) to mirror LangChain's workflow primitives without external installs.
 - Updated the backend connectivity guide to highlight the new orchestrator and keep operators aligned on the Perplexity-first architecture.
-- Enhanced project-scoped OpenAI key support by auto-inferring the project identifier from `sk-proj-` secrets while still honouring `OPENAI_PROJECT_ID`, reducing 401 failures when the variable is omitted.
+- Reverted automatic inference of project identifiers from `sk-proj-` secrets and now require explicit `OPENAI_PROJECT_ID` values so requests never send malformed project headers.
