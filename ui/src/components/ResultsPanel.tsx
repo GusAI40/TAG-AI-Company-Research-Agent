@@ -49,19 +49,19 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ isLoading, error, result, a
       <div className={`${glassStyle.card} equilibrium-panel space-y-8`}>
         <header className="space-y-2">
           <span className="equilibrium-badge text-xs uppercase tracking-[0.3em] text-white/60">Perplexity • OpenAI Agents</span>
-          <h2 className="text-3xl font-semibold text-white">Research Highlights</h2>
+          <h2 className="text-3xl font-semibold text-white">Hero Briefing</h2>
           <p className="text-white/60 max-w-2xl">
-            Your request is answered using Perplexity's latest search API and an agentic workflow that synthesises marketing-ready insights for the Ole Miss Finance Club.
+            PitchGuard fuses Perplexity’s newest search with an OpenAI agentic brain to deliver a brilliant, cited snapshot in seconds.
           </p>
           <p className="text-white/70 max-w-2xl">
-            Share these findings with your stakeholders to position them as the heroes who make disciplined, risk-aware decisions because you surfaced every hidden edge.
+            Drop this into your deck and your clients feel unstoppable—because you brought the effortless clarity that wins the room.
           </p>
         </header>
 
         {isLoading && (
           <div className="flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5/20 px-6 py-6 text-white/80">
             <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="text-base">Running Perplexity research…</span>
+            <span className="text-base">Crafting your hero briefing…</span>
           </div>
         )}
 
@@ -70,7 +70,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ isLoading, error, result, a
             <h3 className="text-lg font-semibold">We hit a snag</h3>
             <p className="mt-2 text-white/80">{error}</p>
             <p className="mt-4 text-sm text-white/60">
-              Confirm your Perplexity and OpenAI keys are configured, then run the research again.
+              Confirm your Perplexity and OpenAI keys are set, then relaunch PitchGuard.
             </p>
           </div>
         )}
@@ -78,7 +78,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ isLoading, error, result, a
         {!isLoading && !error && !result && (
           <div className="rounded-2xl border border-white/10 bg-white/5/20 px-6 py-6 text-white/70">
             <p>
-              Submit a company to receive a Perplexity-driven briefing with a summarised marketing profile and cited source links.
+              Enter a company to get an instantly readable briefing, complete with clean citations and a ready-to-share profile.
             </p>
           </div>
         )}
@@ -87,7 +87,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ isLoading, error, result, a
           <div className="space-y-8">
             {result.answer && (
               <div className="space-y-3">
-                <h3 className="text-2xl font-semibold text-white">Perplexity synthesis</h3>
+                <h3 className="text-2xl font-semibold text-white">Perplexity spotlight</h3>
                 <p className="leading-relaxed text-white/80 whitespace-pre-line">{result.answer}</p>
               </div>
             )}

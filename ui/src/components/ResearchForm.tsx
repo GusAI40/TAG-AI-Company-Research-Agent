@@ -130,6 +130,12 @@ const ResearchForm: React.FC<ResearchFormProps> = ({
 
       {/* Main Form */}
       <div className={`${glassStyle.card} equilibrium-panel`}>
+        <header className="mb-6 space-y-2 text-white">
+          <h2 className="text-3xl font-semibold">Effortless launch</h2>
+          <p className="text-white/70 max-w-2xl">
+            Type one company, tap start, and let PitchGuard deliver a crisp, confident story your audience can trust.
+          </p>
+        </header>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Company Name */}
@@ -245,12 +251,12 @@ const ResearchForm: React.FC<ResearchFormProps> = ({
               {isResearching ? (
                 <>
                   <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5 loader-icon" style={{ stroke: loaderColor }} />
-                  <span className="text-base font-medium text-white">Researching...</span>
+                  <span className="text-base font-medium text-white">Finding brilliance…</span>
                 </>
               ) : (
                 <>
                   <Search className="-ml-1 mr-2 h-5 w-5 text-white" />
-                  <span className="text-base font-medium text-white">Start Research</span>
+                  <span className="text-base font-medium text-white">Launch PitchGuard</span>
                 </>
               )}
             </div>

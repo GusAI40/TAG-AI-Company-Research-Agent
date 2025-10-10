@@ -38,6 +38,12 @@ Use this framing in onboarding, dashboards, and outbound decks so the user alway
 3. **Competence signaling** – Badges and score improvements show mastery, appealing to competitive club culture.
 4. **Social proof** – Share anonymized success stories and usage stats from peers to normalize diligence-first workflows.
 
+## Voice & Copy Standards
+- **Apple power words first** – Lead with crisp adjectives like *Effortless*, *Instant*, *Brilliant*, and *Confident* to create a premium, optimistic tone.
+- **Simple sentences** – Keep guidance to one or two short sentences per surface so any student can succeed without prior training.
+- **Hero-centric framing** – Every headline should explain how the user helps their client win; the product is the spotlight, not the star.
+- **Actionable next step** – Close each section with a direct verb ("Launch PitchGuard", "Drop this into your deck") so momentum never stalls.
+
 ## Monte Carlo Usage Simulation (1-Year Horizon)
 The simulation in [`analysis/pitchguard_usage_simulation.py`](../analysis/pitchguard_usage_simulation.py) models 10,000 scenarios of annual usage, combining weekly growth, retention, premium conversion, and time savings. Results:
 

@@ -64,7 +64,7 @@ const Header: React.FC<HeaderProps> = ({ glassStyle, title = 'Company Research A
       <span className="equilibrium-badge">PitchGuard • Ole Miss Finance Club</span>
       <h1 className="equilibrium-title">{title}</h1>
       <p className="equilibrium-subtext">
-        Run PitchGuard and you become the club’s Guardian Closer—streaming hidden-risk insights that make your clients the heroes of every investment story.
+        Launch PitchGuard and deliver instant, effortless clarity. Your clients stride in confident, you close the room with a brilliant, hero-making story.
       </p>
       <div className="equilibrium-divider" />
     </header>
