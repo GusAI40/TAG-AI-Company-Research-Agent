@@ -49,5 +49,6 @@ The simulation in [`analysis/pitchguard_usage_simulation.py`](../analysis/pitchg
 To support the roadmap above we will onboard:
 - **Google News MCP Server** – surfaces breaking headlines linked to coverage tickers.
 - **Slack Webhook API** – sends real-time diligence completion alerts to club channels, increasing perceived responsiveness.
+- **Perplexity Search API** – already wired as an automated fallback when the LangGraph backend is unreachable. Requires `PERPLEXITY_API_KEY` and optional `PERPLEXITY_SEARCH_URL` overrides in the backend environment.
 
 Document any future integrations in `docs/update-log.md` to preserve institutional memory.

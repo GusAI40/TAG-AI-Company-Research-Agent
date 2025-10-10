@@ -78,6 +78,20 @@ export type ConnectionAttempt = {
   timestamp: number;
 };
 
+export type PerplexitySource = {
+  title: string;
+  url?: string;
+  snippet: string;
+  score?: number | null;
+  published_at?: string | null;
+};
+
+export type PerplexityResult = {
+  query: string;
+  answer?: string;
+  results: PerplexitySource[];
+};
+
 // Component Props Types
 export type ResearchStatusProps = {
   status: ResearchStatus | null;
@@ -95,6 +109,16 @@ export type ConnectionDiagnosticsProps = {
   attempts: ConnectionAttempt[];
   activeApiBase: string;
   activeWsBase: string;
+  glassStyle: GlassStyle;
+};
+
+export type PerplexityFallbackProps = {
+  visible: boolean;
+  isRunning: boolean;
+  error: string | null;
+  result: PerplexityResult | null;
+  onRun: () => void;
+  onReset: () => void;
   glassStyle: GlassStyle;
 };
 

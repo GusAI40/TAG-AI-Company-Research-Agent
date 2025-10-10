@@ -21,6 +21,11 @@ import uuid
 from collections import defaultdict
 from backend.services.mongodb import MongoDBService
 from backend.services.pdf_service import PDFService
+from backend.services.perplexity_service import (
+    PerplexityConfigurationError,
+    PerplexitySearchError,
+    run_perplexity_search,
+)
 
 # Configure logging
 logger = logging.getLogger()
@@ -73,6 +78,14 @@ class GeneratePDFRequest(BaseModel):
     report_content: str
     company_name: str | None = None
 
+
+class PerplexityResearchRequest(BaseModel):
+    company: str
+    topic: str | None = None
+    industry: str | None = None
+    hq_location: str | None = None
+    focus: list[str] | None = None
+
 @app.options("/research")
 async def preflight():
     response = JSONResponse(content=None, status_code=200)
@@ -102,6 +115,33 @@ async def research(data: ResearchRequest):
     except Exception as e:
         logger.error(f"Error initiating research: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/research/perplexity")
+async def research_perplexity(data: PerplexityResearchRequest):
+    """Execute a Perplexity Search query as a lightweight fallback."""
+
+    pieces = [data.company.strip()]
+    if data.topic:
+        pieces.append(f"Topic: {data.topic.strip()}")
+    if data.industry:
+        pieces.append(f"Industry: {data.industry.strip()}")
+    if data.hq_location:
+        pieces.append(f"HQ: {data.hq_location.strip()}")
+
+    query = ". ".join(piece for piece in pieces if piece)
+
+    try:
+        result = await run_perplexity_search(query, focus_topics=data.focus)
+    except PerplexityConfigurationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except PerplexitySearchError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover - unexpected errors
+        logger.error("Unexpected Perplexity error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Perplexity lookup failed") from exc
+
+    return {"status": "completed", "result": result}
 
 async def process_research(job_id: str, data: ResearchRequest):
     try:

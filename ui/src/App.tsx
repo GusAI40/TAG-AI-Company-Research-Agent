@@ -7,6 +7,7 @@ import ResearchStatus from './components/ResearchStatus';
 import ResearchReport from './components/ResearchReport';
 import ResearchForm from './components/ResearchForm';
 import ConnectionDiagnostics from './components/ConnectionDiagnostics';
+import PerplexityFallbackPanel from './components/PerplexityFallbackPanel';
 import {
   ResearchStatus as ResearchStatusType,
   ResearchOutput,
@@ -16,7 +17,8 @@ import {
   ResearchState,
   GlassStyle,
   AnimationStyle,
-  ConnectionAttempt
+  ConnectionAttempt,
+  PerplexityResult
 } from './types';
 
 const rawApiUrl = import.meta.env.VITE_API_URL as string | undefined;
@@ -90,6 +92,13 @@ const normalizeWsBase = (value: string | undefined, fallback: string) => {
 
   const protocol = isBrowser && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   return stripTrailingSlash(`${protocol}//${trimmed}`);
+};
+
+type ResearchRequestPayload = {
+  company: string;
+  company_url?: string;
+  industry?: string;
+  hq_location?: string;
 };
 
 // Define writing animation
@@ -179,6 +188,7 @@ function App() {
     api: !rawApiUrl,
     ws: !rawWsUrl,
   });
+  const lastResearchPayloadRef = useRef<ResearchRequestPayload | null>(null);
 
   const getActiveApiBase = () => {
     if (usingFallbackRef.current.api && isBrowser) {
@@ -336,6 +346,65 @@ function App() {
     return new Error(`Request failed with status ${response.status}`);
   };
 
+  const resetPerplexityFallback = () => {
+    setPerplexityResult(null);
+    setPerplexityError(null);
+  };
+
+  const runPerplexityFallback = async (payload: ResearchRequestPayload, options?: { auto?: boolean }) => {
+    if (isPerplexityRunning) {
+      return;
+    }
+
+    setShowPerplexityFallback(true);
+    if (options?.auto) {
+      setPerplexityResult(null);
+      setPerplexityError(null);
+    } else {
+      resetPerplexityFallback();
+    }
+
+    try {
+      setIsPerplexityRunning(true);
+      setPerplexityError(null);
+
+      const response = await fetchWithAutoFallback('/research/perplexity', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          company: payload.company,
+          industry: payload.industry,
+          hq_location: payload.hq_location,
+          topic: 'Hidden risks and governance controls',
+          focus: ['finance', 'governance', 'sec-filings'],
+        }),
+      });
+
+      if (!response.ok) {
+        throw await interpretErrorResponse(response);
+      }
+
+      const data = await response.json();
+      const parsedResult = (data?.result ?? null) as PerplexityResult | null;
+      if (parsedResult) {
+        setPerplexityResult(parsedResult);
+      } else {
+        setPerplexityError('Perplexity response did not include a result payload.');
+      }
+    } catch (fallbackError) {
+      const message =
+        fallbackError instanceof Error
+          ? fallbackError.message
+          : 'Perplexity search failed. Check API connectivity and credentials.';
+      setPerplexityError(message);
+    } finally {
+      setIsPerplexityRunning(false);
+    }
+  };
+
   useEffect(() => {
     if (!isBrowser) return;
     console.log("Active API base:", getActiveApiBase() || '(relative origin)');
@@ -410,6 +479,12 @@ function App() {
 
   // Add new state for color cycling
   const [loaderColor, setLoaderColor] = useState("#0078D2");
+
+  // Perplexity fallback state
+  const [perplexityResult, setPerplexityResult] = useState<PerplexityResult | null>(null);
+  const [perplexityError, setPerplexityError] = useState<string | null>(null);
+  const [isPerplexityRunning, setIsPerplexityRunning] = useState(false);
+  const [showPerplexityFallback, setShowPerplexityFallback] = useState(false);
   
   // Add useEffect for color cycling
   useEffect(() => {
@@ -462,6 +537,8 @@ function App() {
       setIsEnrichmentExpanded(true);
       setIsResetting(false);
       setHasScrolledToStatus(false); // Reset scroll flag when resetting research
+      setShowPerplexityFallback(false);
+      resetPerplexityFallback();
     }, 300); // Match this with CSS transition duration
   };
 
@@ -943,6 +1020,10 @@ function App() {
         hq_location: formData.companyHq || undefined,
       };
 
+      lastResearchPayloadRef.current = requestData;
+      setShowPerplexityFallback(false);
+      resetPerplexityFallback();
+
       const response = await fetchWithAutoFallback(requestPath, {
         method: "POST",
         mode: "cors",
@@ -986,6 +1067,13 @@ function App() {
       }
       setError(message);
       setIsResearching(false);
+      if (lastResearchPayloadRef.current) {
+        runPerplexityFallback(lastResearchPayloadRef.current, { auto: true }).catch((fallbackError) => {
+          console.warn('Automatic Perplexity fallback failed:', fallbackError);
+        });
+      } else {
+        setShowPerplexityFallback(true);
+      }
     }
   };
 
@@ -1223,6 +1311,24 @@ function App() {
           attempts={connectionAttempts}
           activeApiBase={getActiveApiBase() || ''}
           activeWsBase={getActiveWsBase() || ''}
+          glassStyle={glassStyle}
+        />
+
+        <PerplexityFallbackPanel
+          visible={showPerplexityFallback}
+          isRunning={isPerplexityRunning}
+          error={perplexityError}
+          result={perplexityResult}
+          onRun={() => {
+            if (lastResearchPayloadRef.current) {
+              runPerplexityFallback(lastResearchPayloadRef.current).catch((fallbackError) => {
+                console.warn('Manual Perplexity fallback failed:', fallbackError);
+              });
+            }
+          }}
+          onReset={() => {
+            resetPerplexityFallback();
+          }}
           glassStyle={glassStyle}
         />
 
