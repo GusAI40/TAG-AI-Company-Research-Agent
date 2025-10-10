@@ -53,3 +53,5 @@
 ## 2025-03-26
 - Retired the unused `VITE_API_URL`/`VITE_WS_URL` variables and their helper modules so the frontend depends solely on the Perplexity endpoint.
 - Refreshed the fallback guide and connectivity runbook with explicit steps for retrieving the correct `proj_...` identifier from OpenAI and the list of required secrets.
+- 2025-10-10: Added `docs/environment-config.md` to clarify required secrets, legacy `VITE_*` removals, and the request path that
+touches OpenAI.
