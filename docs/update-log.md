@@ -31,3 +31,7 @@
 - Added a FastAPI endpoint at `/chatkit/session` that brokers ChatKit client secrets using the OpenAI workflow ID and API key.
 - Documented the self-hosted ChatKit flow in `docs/chatkit-integration.md`, including environment variables, frontend wiring, and operational guidance.
 - Ensured the endpoint emits actionable diagnostics when configuration or SDK support is missing to streamline operator debugging.
+
+## 2025-03-23
+- Repointed the agent workflow to the in-repo OpenAI Agents shim and Zod clone so Vercel runtimes no longer require external `@openai/agents` or `zod` packages.
+- Removed the temporary tsconfig path aliases to avoid masking missing runtime dependencies in future builds.

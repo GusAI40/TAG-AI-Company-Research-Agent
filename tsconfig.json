@@ -7,11 +7,7 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "strict": false,
-    "baseUrl": ".",
-    "paths": {
-      "zod": ["lib/zod.ts"],
-      "@openai/agents": ["lib/openai-agents.ts"]
-    }
+    "baseUrl": "."
   },
   "include": ["api/**/*.ts", "agents/**/*.ts", "lib/**/*.ts", "global.d.ts"],
   "exclude": ["node_modules", "ui/node_modules"]
