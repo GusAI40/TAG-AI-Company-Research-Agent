@@ -55,3 +55,7 @@
 - Refreshed the fallback guide and connectivity runbook with explicit steps for retrieving the correct `proj_...` identifier from OpenAI and the list of required secrets.
 - 2025-10-10: Added `docs/environment-config.md` to clarify required secrets, legacy `VITE_*` removals, and the request path that
 touches OpenAI.
+
+## 2025-03-27
+- Published a Perplexity-first data flow diagram (`docs/data-flow-diagram.md`) with mermaid overview, narrative breakdown, and operational notes.
+- Captured the single-ingress architecture so future engineers can troubleshoot or extend the orchestrator with confidence.
