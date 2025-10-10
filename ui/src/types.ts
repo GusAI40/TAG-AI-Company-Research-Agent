@@ -71,6 +71,13 @@ export type GlassStyle = {
   input: string;
 };
 
+export type ConnectionAttempt = {
+  url: string;
+  status?: number;
+  error?: string;
+  timestamp: number;
+};
+
 // Component Props Types
 export type ResearchStatusProps = {
   status: ResearchStatus | null;
@@ -81,6 +88,14 @@ export type ResearchStatusProps = {
   glassStyle: GlassStyle;
   loaderColor: string;
   statusRef: React.RefObject<HTMLDivElement>;
+};
+
+export type ConnectionDiagnosticsProps = {
+  error: string | null;
+  attempts: ConnectionAttempt[];
+  activeApiBase: string;
+  activeWsBase: string;
+  glassStyle: GlassStyle;
 };
 
 export type ResearchQueriesProps = {

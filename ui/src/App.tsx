@@ -6,6 +6,7 @@ import ResearchQueries from './components/ResearchQueries';
 import ResearchStatus from './components/ResearchStatus';
 import ResearchReport from './components/ResearchReport';
 import ResearchForm from './components/ResearchForm';
+import ConnectionDiagnostics from './components/ConnectionDiagnostics';
 import {
   ResearchStatus as ResearchStatusType,
   ResearchOutput,
@@ -14,7 +15,8 @@ import {
   EnrichmentCounts,
   ResearchState,
   GlassStyle,
-  AnimationStyle
+  AnimationStyle,
+  ConnectionAttempt
 } from './types';
 
 const rawApiUrl = import.meta.env.VITE_API_URL as string | undefined;
@@ -171,6 +173,7 @@ function App() {
 
   const [apiBase, setApiBase] = useState(() => normalizeHttpBase(rawApiUrl, browserFallbacks.http));
   const [wsBase, setWsBase] = useState(() => normalizeWsBase(rawWsUrl, browserFallbacks.ws));
+  const [connectionAttempts, setConnectionAttempts] = useState<ConnectionAttempt[]>([]);
   const fallbackOriginsRef = useRef(browserFallbacks);
   const usingFallbackRef = useRef({
     api: !rawApiUrl,
@@ -228,6 +231,13 @@ function App() {
     return nextInit;
   };
 
+  const recordAttempt = (attempt: ConnectionAttempt) => {
+    setConnectionAttempts((previous) => {
+      const next = [...previous, attempt];
+      return next.length > 4 ? next.slice(next.length - 4) : next;
+    });
+  };
+
   const attemptRequestVariants = async (
     base: string,
     normalizedPath: string,
@@ -247,11 +257,27 @@ function App() {
       const variant = variants[index];
       const targetUrl = joinUrl(base, variant);
       console.log("Issuing request to:", targetUrl);
-      const response = await fetch(targetUrl, init);
-      if (response.ok || index === variants.length - 1) {
-        return response;
+      try {
+        const response = await fetch(targetUrl, init);
+        recordAttempt({
+          url: targetUrl,
+          status: response.status,
+          timestamp: Date.now(),
+        });
+        if (response.ok || index === variants.length - 1) {
+          return response;
+        }
+        console.warn(`Request to ${targetUrl} returned status ${response.status}, trying next variant if available.`);
+      } catch (requestError) {
+        const errorMessage =
+          requestError instanceof Error ? requestError.message : String(requestError);
+        recordAttempt({
+          url: targetUrl,
+          error: errorMessage,
+          timestamp: Date.now(),
+        });
+        throw requestError;
       }
-      console.warn(`Request to ${targetUrl} returned status ${response.status}, trying next variant if available.`);
     }
 
     throw new Error("All request variants failed");
@@ -286,7 +312,10 @@ function App() {
 
   const interpretErrorResponse = async (response: Response) => {
     const errorText = await response.clone().text().catch(() => '');
-    console.log("Error response:", errorText);
+    const trimmedPreview = errorText.length > 400 ? `${errorText.slice(0, 400)}…` : errorText;
+    if (trimmedPreview) {
+      console.log("Error response preview:", trimmedPreview);
+    }
 
     if (response.status === 401) {
       return new Error("Authentication failed. Ensure the research service allows access from this deployment or configure VITE_API_URL/VITE_WS_URL to a reachable backend endpoint.");
@@ -876,6 +905,7 @@ function App() {
 
     // Clear any existing errors first
     setError(null);
+    setConnectionAttempts([]);
 
     // If research is complete, reset the UI first
     if (isComplete) {
@@ -1187,6 +1217,14 @@ function App() {
             <p className="text-[#FFD3DC]">{error}</p>
           </div>
         )}
+
+        <ConnectionDiagnostics
+          error={error}
+          attempts={connectionAttempts}
+          activeApiBase={getActiveApiBase() || ''}
+          activeWsBase={getActiveWsBase() || ''}
+          glassStyle={glassStyle}
+        />
 
         <ResearchStatus
           status={status}

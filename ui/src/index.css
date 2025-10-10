@@ -418,6 +418,28 @@
   box-shadow: 0 28px 56px -34px rgba(3, 15, 40, 0.85);
 }
 
+.equilibrium-diagnostics {
+  border: 1px solid rgba(255, 211, 220, 0.18);
+  background: linear-gradient(145deg, rgba(138, 28, 51, 0.32), rgba(11, 24, 49, 0.6));
+}
+
+.equilibrium-diagnostics__code {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.7rem;
+  color: #ffffff;
+}
+
+.equilibrium-diagnostics ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
 @media (max-width: 640px) {
   .equilibrium-header__actions {
     position: static;
