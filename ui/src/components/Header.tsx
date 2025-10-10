@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Theme, ThemeContextProps } from '../context';
 
 interface HeaderProps {
   glassStyle: string;
@@ -8,12 +7,14 @@ interface HeaderProps {
 
 const ThemeToggle = () => {
   const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return true;
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     return savedTheme ? savedTheme === 'dark' : prefersDark;
   });
 
   useEffect(() => {
+    if (typeof document === 'undefined') return;
     if (darkMode) {
       document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');
@@ -28,7 +29,7 @@ const ThemeToggle = () => {
   };
 
   return (
-    <button 
+    <button
       onClick={toggleTheme}
       className="theme-toggle"
       title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
@@ -55,27 +56,19 @@ const ThemeToggle = () => {
 };
 
 const Header: React.FC<HeaderProps> = ({ glassStyle, title = 'Company Research Agent' }) => {
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    console.error('Failed to load Tavily logo');
-    console.log('Image path:', e.currentTarget.src);
-    e.currentTarget.style.display = 'none';
-  };
-
   return (
-    <div className="relative mb-16">
-      <div className="text-center pt-4">
-        <h1 className="text-[48px] font-medium text-[#1a202c] font-['DM_Sans'] tracking-[-1px] leading-[52px] text-center mx-auto antialiased">
-          {title}
-        </h1>
-        <p className="text-gray-600 text-lg font-['DM_Sans'] mt-4">
-          Conduct in-depth company diligence powered by TAG ai
-        </p>
-      </div>
-      <div className="absolute top-0 right-0 flex items-center space-x-4">
+    <header className="equilibrium-header">
+      <div className="equilibrium-header__actions">
         <ThemeToggle />
       </div>
-    </div>
+      <span className="equilibrium-badge">PitchGuard • Ole Miss Finance Club</span>
+      <h1 className="equilibrium-title">{title}</h1>
+      <p className="equilibrium-subtext">
+        Launch PitchGuard and deliver instant, effortless clarity. Your clients stride in confident, you close the room with a brilliant, hero-making story.
+      </p>
+      <div className="equilibrium-divider" />
+    </header>
   );
 };
 
-export default Header; 
+export default Header;
