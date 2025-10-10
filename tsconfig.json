@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "baseUrl": "."
+  },
+  "include": ["api/**/*.ts", "agents/**/*.ts", "lib/**/*.ts", "global.d.ts"],
+  "exclude": ["node_modules", "ui/node_modules"]
+}
