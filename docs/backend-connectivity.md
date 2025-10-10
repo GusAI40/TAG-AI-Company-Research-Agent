@@ -19,7 +19,13 @@ When the UI reports "Authentication failed" or similar errors:
 1. **Verify environment variables**
    - `PERPLEXITY_API_KEY` – must be set for `/api/research/perplexity`.
    - `OPENAI_API_KEY` – required for the agent workflow.
-   - `OPENAI_PROJECT_ID` – mandatory whenever the key starts with `sk-proj-`. Copy the identifier directly from the OpenAI dashboard (it must look like `proj_...`). Add `OPENAI_ORG_ID` if your organisation requires it.
+   - `OPENAI_PROJECT_ID` – mandatory whenever the key starts with `sk-proj-`. Copy the identifier directly from the OpenAI dashboard (Settings → Projects) so it looks like `proj_...`. You can also verify it via the API:
+     ```bash
+     curl -s https://api.openai.com/v1/projects \
+       -H "Authorization: Bearer $OPENAI_API_KEY" \
+       | jq -r '.data[].id'
+     ```
+     Add `OPENAI_ORG_ID` if your organisation requires it.
 2. **Test the Vercel function**
    ```bash
    curl -X POST https://<deployment-domain>/api/research/perplexity \
@@ -32,7 +38,7 @@ When the UI reports "Authentication failed" or similar errors:
 
 ## Migration notes
 
-- Previous DNS issues with `tag-ai-company-research-agent.fly.dev` are obsolete; the hostname is no longer used anywhere in the stack.
+- Previous DNS issues with `tag-ai-company-research-agent.fly.dev` are obsolete; the hostname is no longer used anywhere in the stack and the `VITE_WS_URL`/`VITE_API_URL` environment variables can be removed from Vercel.
 - WebSocket code remains in the Python backend for archival purposes but is not invoked by the production UI.
 - Any future integrations should target the serverless function or add new routes under `api/` rather than reviving the Fly.io deployment.
 

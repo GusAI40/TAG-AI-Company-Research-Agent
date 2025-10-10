@@ -49,3 +49,7 @@
 - Reverted project-id auto-inference for `sk-proj-` keys so deployments must supply `OPENAI_PROJECT_ID`, preventing malformed headers that triggered `invalid_project` responses.
 - Updated connectivity docs to emphasise the mandatory environment variable requirement for project-scoped keys.
 - Hardened project header validation so `OPENAI_PROJECT_ID` must match the `proj_...` format, avoiding accidental copies of API keys into the project field.
+
+## 2025-03-26
+- Retired the unused `VITE_API_URL`/`VITE_WS_URL` variables and their helper modules so the frontend depends solely on the Perplexity endpoint.
+- Refreshed the fallback guide and connectivity runbook with explicit steps for retrieving the correct `proj_...` identifier from OpenAI and the list of required secrets.
