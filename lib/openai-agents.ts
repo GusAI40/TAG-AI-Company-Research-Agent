@@ -1,4 +1,4 @@
-import { ZodTypeAny } from './zod';
+import { ZodTypeAny } from './zod.js';
 
 export type AgentInputContent = {
   type: 'input_text' | 'output_text';

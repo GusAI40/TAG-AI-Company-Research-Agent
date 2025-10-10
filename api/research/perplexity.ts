@@ -1,5 +1,5 @@
-import { runWorkflow } from '../../agents/pitchguard-workflow';
-import type { WorkflowOutput } from '../../agents/pitchguard-workflow';
+import { runWorkflow } from '../../agents/pitchguard-workflow.js';
+import type { WorkflowOutput } from '../../agents/pitchguard-workflow.js';
 
 export const config = {
   runtime: 'nodejs',

@@ -1,5 +1,5 @@
-import { z } from "../lib/zod";
-import { Agent, AgentInputItem, Runner } from "../lib/openai-agents";
+import { z } from "../lib/zod.js";
+import { Agent, AgentInputItem, Runner } from "../lib/openai-agents.js";
 
 export const ReActStepSchema = z.object({
   thought: z.string(),
