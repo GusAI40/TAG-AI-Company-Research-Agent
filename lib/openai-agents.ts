@@ -95,6 +95,30 @@ const normaliseMessages = (agent: Agent<ZodTypeAny>, conversation: AgentInputIte
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
+const buildOpenAIHeaders = (apiKey: string) => {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+  };
+
+  const orgId = process.env.OPENAI_ORG_ID;
+  if (orgId) {
+    headers['OpenAI-Organization'] = orgId;
+  }
+
+  if (apiKey.startsWith('sk-proj-')) {
+    const projectId = process.env.OPENAI_PROJECT_ID;
+    if (!projectId) {
+      throw new Error(
+        'OPENAI_PROJECT_ID must be set when using a project-scoped API key (sk-proj-...).'
+      );
+    }
+    headers['OpenAI-Project'] = projectId;
+  }
+
+  return headers;
+};
+
 export class Runner {
   constructor(public readonly options: RunnerOptions = {}) {}
 
@@ -108,10 +132,7 @@ export class Runner {
 
     const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: buildOpenAIHeaders(apiKey),
       body: JSON.stringify({
         model: agent.model,
         temperature: 0,

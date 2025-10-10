@@ -18,6 +18,7 @@ When the UI reports "Authentication failed" or similar errors:
 1. **Verify environment variables**
    - `PERPLEXITY_API_KEY` – must be set for `/api/research/perplexity`.
    - `OPENAI_API_KEY` – required for the agent workflow.
+   - `OPENAI_PROJECT_ID` – mandatory when the API key starts with `sk-proj-`; add `OPENAI_ORG_ID` if your organisation requires it.
 2. **Test the Vercel function**
    ```bash
    curl -X POST https://<deployment-domain>/api/research/perplexity \

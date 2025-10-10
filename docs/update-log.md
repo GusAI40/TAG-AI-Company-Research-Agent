@@ -37,3 +37,4 @@
 - Removed the temporary tsconfig path aliases to avoid masking missing runtime dependencies in future builds.
 - Elevated the hero-focused messaging in the product vision and UI so members lead every narrative win when presenting PitchGuard insights.
 - Refined the UI copy with Apple-style power words, simplified launch guidance, and documented the voice rules in `docs/pitchguard-vision.md` to keep the experience effortless for every user.
+- Added support for project-scoped OpenAI keys by requiring `OPENAI_PROJECT_ID` and propagating optional organization headers so hosted deployments stop failing with 401 errors.
