@@ -19,6 +19,12 @@ export type PerplexityResult = {
   usage?: Record<string, unknown> | null;
 };
 
+export type ReActStep = {
+  thought: string;
+  action: string;
+  observation: string;
+};
+
 export type AgentCompanyProfile = {
   company_name: string;
   industry: string;
@@ -30,6 +36,8 @@ export type AgentCompanyProfile = {
 };
 
 export type AgentWorkflowResult = {
+  research_trace: ReActStep[];
+  summary_trace: ReActStep[];
   companies: AgentCompanyProfile[];
   summary: AgentCompanyProfile;
   raw: {

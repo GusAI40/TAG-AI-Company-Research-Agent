@@ -42,9 +42,22 @@ interface PerplexityResponse {
   usage?: Record<string, unknown>;
 }
 
+type ResearchParsed = WorkflowOutput['webResearchAgentResult']['output_parsed'];
+type SummaryParsed = WorkflowOutput['summarizeAndDisplayResult']['output_parsed'];
+
+interface ReActStep {
+  thought: string;
+  action: string;
+  observation: string;
+}
+
+type AgentCompanyProfile = ResearchParsed['companies'][number];
+
 interface AgentResultPayload {
-  companies: WorkflowOutput['webResearchAgentResult']['output_parsed']['companies'];
-  summary: WorkflowOutput['summarizeAndDisplayResult']['output_parsed'];
+  research_trace: ReActStep[];
+  summary_trace: ReActStep[];
+  companies: AgentCompanyProfile[];
+  summary: Omit<SummaryParsed, 'reasoning_trace'>;
   raw: {
     research: string;
     summary: string;
@@ -257,9 +270,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   let agentResult: AgentResultPayload | null = null;
   try {
     const workflowOutput = await runWorkflow({ input_as_text: agentPrompt });
+    const researchParsed = workflowOutput.webResearchAgentResult.output_parsed;
+    const summaryParsed = workflowOutput.summarizeAndDisplayResult.output_parsed;
+
+    const { reasoning_trace: researchTrace, companies } = researchParsed;
+    const { reasoning_trace: summaryTrace, ...summaryProfile } = summaryParsed;
+
     agentResult = {
-      companies: workflowOutput.webResearchAgentResult.output_parsed.companies,
-      summary: workflowOutput.summarizeAndDisplayResult.output_parsed,
+      research_trace: researchTrace,
+      summary_trace: summaryTrace,
+      companies,
+      summary: summaryProfile,
       raw: {
         research: workflowOutput.webResearchAgentResult.output_text,
         summary: workflowOutput.summarizeAndDisplayResult.output_text,

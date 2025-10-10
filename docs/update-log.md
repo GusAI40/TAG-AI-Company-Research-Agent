@@ -25,3 +25,4 @@
 - Simplified the React client to call the new API directly and present Perplexity/agent output in a dedicated results panel.
 - Updated backend connectivity docs to reflect the Perplexity-only architecture and documented the required environment variables.
 - Swapped the research edge function to Vercel's supported `nodejs` runtime to keep deployments green after removing Fly.io.
+- Extended the agent workflow with a ReAct reasoning trace, updated schemas with Zod validation, and surfaced the step-by-step reasoning in the UI for transparency.

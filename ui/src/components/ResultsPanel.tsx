@@ -1,6 +1,6 @@
 import React from 'react';
 import { Loader2, ExternalLink } from 'lucide-react';
-import { AgentWorkflowResult, GlassStyle, PerplexityResult } from '../types';
+import { AgentWorkflowResult, GlassStyle, PerplexityResult, ReActStep } from '../types';
 
 interface ResultsPanelProps {
   isLoading: boolean;
@@ -9,6 +9,39 @@ interface ResultsPanelProps {
   agentResult: AgentWorkflowResult | null;
   glassStyle: GlassStyle;
 }
+
+const renderTrace = (title: string, steps: ReActStep[]) => {
+  if (!steps || steps.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-2xl font-semibold text-white">{title}</h3>
+      <ol className="space-y-3">
+        {steps.map((step, index) => (
+          <li
+            key={`${title}-${index}-${step.action}`}
+            className="rounded-2xl border border-white/10 bg-white/5/10 p-5 text-white/80"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm uppercase tracking-[0.35em] text-white/50">Step {index + 1}</span>
+              <span className="rounded-full bg-[#0078D2]/20 px-3 py-1 text-xs font-medium text-[#79C1FF]">
+                {step.action}
+              </span>
+            </div>
+            <p className="mt-3 text-white/90">
+              <span className="font-semibold text-white/70">Thought:</span> {step.thought}
+            </p>
+            <p className="mt-2 text-white/90">
+              <span className="font-semibold text-white/70">Observation:</span> {step.observation}
+            </p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+};
 
 const ResultsPanel: React.FC<ResultsPanelProps> = ({ isLoading, error, result, agentResult, glassStyle }) => {
   return (
@@ -103,6 +136,10 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ isLoading, error, result, a
                 </div>
               </div>
             )}
+
+            {agentResult && renderTrace('Research reasoning trace', agentResult.research_trace)}
+
+            {agentResult && renderTrace('Narrative reasoning trace', agentResult.summary_trace)}
 
             {result.results.length > 0 && (
               <div className="space-y-4">
