@@ -53,6 +53,9 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ isLoading, error, result, a
           <p className="text-white/60 max-w-2xl">
             Your request is answered using Perplexity's latest search API and an agentic workflow that synthesises marketing-ready insights for the Ole Miss Finance Club.
           </p>
+          <p className="text-white/70 max-w-2xl">
+            Share these findings with your stakeholders to position them as the heroes who make disciplined, risk-aware decisions because you surfaced every hidden edge.
+          </p>
         </header>
 
         {isLoading && (

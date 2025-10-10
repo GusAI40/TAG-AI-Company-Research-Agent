@@ -17,9 +17,20 @@ PitchGuard serves three primary audiences:
 - **Partner funds & employers** access a pipeline of analysts trained to spot governance and financial landmines before they become portfolio losses.
 
 ### Tangible Benefits
+- **Heroic win for members**: Because they run PitchGuard, Ole Miss analysts become the "Guardian Closers" who rescue investment theses from hidden risks and deliver decks that win rooms.
 - **Time saved**: Automated sourcing, extraction, and scoring shrink a 6-hour diligence loop into ~90 minutes.
 - **Money earned**: Better pitches and red-flag awareness boost internship and competition win rates, creating downstream compensation upside.
 - **Confidence & trust**: Psychology-backed messaging ("see what insiders hope you ignore") reframes caution as empowerment, motivating consistent use.
+
+## Hero Narrative Playbook
+PitchGuard always leads with the member’s victory. Every touchpoint should remind users that *they* are the heroes keeping capital safe:
+
+1. **Promise** – "Run PitchGuard and become the Guardian Closer who signs off on only truth-backed pitches."
+2. **Proof** – Surface before/after stories where members spotted dilution traps or governance landmines within minutes.
+3. **Path** – In-app copy should call out the next heroic move ("Ship this report to your investment committee and own the diligence win").
+4. **Payoff** – Highlight how the saved hours and cleaner hits list translate to more podium finishes, internships, and time to pursue what they love.
+
+Use this framing in onboarding, dashboards, and outbound decks so the user always feels like the protagonist.
 
 ## Psychology & Messaging Principles
 1. **Empowerment framing** – "You can out-analyze Wall Street by auditing the fine print."
