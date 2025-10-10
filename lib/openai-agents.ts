@@ -95,6 +95,29 @@ const normaliseMessages = (agent: Agent<ZodTypeAny>, conversation: AgentInputIte
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
+const inferProjectId = (apiKey: string): string | undefined => {
+  const fromEnv = process.env.OPENAI_PROJECT_ID?.trim();
+  if (fromEnv) {
+    return fromEnv;
+  }
+
+  const prefix = 'sk-proj-';
+  if (apiKey.startsWith(prefix)) {
+    const remainder = apiKey.slice(prefix.length);
+    if (remainder.length > 0) {
+      const stopIndex = remainder.indexOf('-');
+      if (stopIndex === -1) {
+        return remainder;
+      }
+      if (stopIndex > 0) {
+        return remainder.slice(0, stopIndex);
+      }
+    }
+  }
+
+  return undefined;
+};
+
 const buildOpenAIHeaders = (apiKey: string) => {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${apiKey}`,
@@ -107,10 +130,10 @@ const buildOpenAIHeaders = (apiKey: string) => {
   }
 
   if (apiKey.startsWith('sk-proj-')) {
-    const projectId = process.env.OPENAI_PROJECT_ID;
+    const projectId = inferProjectId(apiKey);
     if (!projectId) {
       throw new Error(
-        'OPENAI_PROJECT_ID must be set when using a project-scoped API key (sk-proj-...).'
+        'Project-scoped keys (sk-proj-...) require setting OPENAI_PROJECT_ID or using a standard secret key.'
       );
     }
     headers['OpenAI-Project'] = projectId;
