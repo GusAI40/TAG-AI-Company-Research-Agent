@@ -219,20 +219,63 @@ function App() {
   };
 
   const fetchWithAutoFallback = async (path: string, init?: RequestInit) => {
-    const targetUrl = joinUrl(getActiveApiBase(), path);
+    const activeApiBase = getActiveApiBase();
+    const targetUrl = joinUrl(activeApiBase, path);
+    const shouldForceCredentials =
+      isBrowser && usingFallbackRef.current.api && activeApiBase === browserFallbacks.http;
+
+    const requestInit: RequestInit | undefined = shouldForceCredentials
+      ? { ...(init ?? {}), credentials: (init?.credentials ?? 'include') as RequestCredentials }
+      : init;
+
     console.log("Issuing request to:", targetUrl);
 
     try {
-      return await fetch(targetUrl, init);
+      return await fetch(targetUrl, requestInit);
     } catch (error) {
       console.warn("Fetch failed for URL:", targetUrl, error);
       if (error instanceof TypeError && switchToBrowserFallback()) {
-        const fallbackUrl = joinUrl(getActiveApiBase(), path);
+        const fallbackApiBase = getActiveApiBase();
+        const fallbackUrl = joinUrl(fallbackApiBase, path);
+        const fallbackShouldForceCredentials =
+          isBrowser && usingFallbackRef.current.api && fallbackApiBase === browserFallbacks.http;
+        const fallbackInit: RequestInit | undefined = fallbackShouldForceCredentials
+          ? { ...(init ?? {}), credentials: (init?.credentials ?? 'include') as RequestCredentials }
+          : init;
         console.log("Retrying request with fallback origin:", fallbackUrl);
-        return fetch(fallbackUrl, init);
+        return fetch(fallbackUrl, fallbackInit);
       }
       throw error;
     }
+  };
+
+  const interpretErrorResponse = async (response: Response) => {
+    const errorText = await response.text().catch(() => '');
+    console.log("Error response:", errorText);
+
+    if (response.status === 401) {
+      const isVercelProtection = /x-vercel-protection-bypass/i.test(errorText) || /Authentication Required/i.test(errorText);
+      if (isVercelProtection) {
+        return new Error(
+          "This deployment is protected. Provide a Vercel bypass token or configure VITE_API_URL/VITE_WS_URL to a reachable backend."
+        );
+      }
+      return new Error("Authentication failed. Please verify your credentials or bypass token.");
+    }
+
+    if (response.status === 404) {
+      return new Error("The requested endpoint was not found on the research service.");
+    }
+
+    if (response.status >= 500) {
+      return new Error("The research service encountered an internal error. Please try again shortly.");
+    }
+
+    if (errorText) {
+      return new Error(errorText);
+    }
+
+    return new Error(`Request failed with status ${response.status}`);
   };
 
   useEffect(() => {
@@ -862,9 +905,7 @@ function App() {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log("Error response:", errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw await interpretErrorResponse(response);
       }
 
       const data = await response.json();
@@ -906,11 +947,12 @@ function App() {
           company_name: originalCompanyName || output.details.report
         }),
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to generate PDF');
+        throw await interpretErrorResponse(response);
       }
-      
+
+
       // Get the blob from the response
       const blob = await response.blob();
       
@@ -1052,7 +1094,7 @@ function App() {
   const checkForFinalReport = async (jobId: string) => {
     try {
       const response = await fetchWithAutoFallback(`/research/status/${jobId}`);
-      if (!response.ok) throw new Error('Failed to fetch status');
+      if (!response.ok) throw await interpretErrorResponse(response);
       
       const data = await response.json();
       
