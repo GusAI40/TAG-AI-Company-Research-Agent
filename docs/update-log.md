@@ -10,3 +10,7 @@
 - Wired a Perplexity Search fallback API (`/research/perplexity`) plus an equilibrium-themed UI panel that auto-runs when the primary research service is unreachable.
 - Added `httpx` dependency and backend service wrapper for Perplexity responses with normalised citations.
 - Refreshed docs to highlight the new Perplexity integration and recorded the change for future audits.
+
+## 2025-03-19
+- Investigated backend connectivity and confirmed the configured Fly.io hostname (`tag-ai-company-research-agent.fly.dev`) does not resolve, causing LangGraph jobs never to start.
+- Documented the DNS and HTTP probes in `docs/backend-connectivity.md` with required remediation steps for deploying the research service.
