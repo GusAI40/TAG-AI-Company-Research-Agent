@@ -2,7 +2,7 @@ import { runWorkflow } from '../../agents/pitchguard-workflow';
 import type { WorkflowOutput } from '../../agents/pitchguard-workflow';
 
 export const config = {
-  runtime: 'nodejs18.x',
+  runtime: 'nodejs',
 };
 
 type VercelRequest = {

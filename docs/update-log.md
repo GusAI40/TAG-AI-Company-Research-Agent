@@ -24,3 +24,4 @@
 - Added a lightweight in-repo Agents SDK shim plus Zod-like validation so the workflow can run without pulling private npm packages.
 - Simplified the React client to call the new API directly and present Perplexity/agent output in a dedicated results panel.
 - Updated backend connectivity docs to reflect the Perplexity-only architecture and documented the required environment variables.
+- Swapped the research edge function to Vercel's supported `nodejs` runtime to keep deployments green after removing Fly.io.
