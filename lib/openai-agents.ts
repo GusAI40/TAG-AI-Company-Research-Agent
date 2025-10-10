@@ -107,12 +107,25 @@ const buildOpenAIHeaders = (apiKey: string) => {
   }
 
   if (apiKey.startsWith('sk-proj-')) {
-    const projectId = process.env.OPENAI_PROJECT_ID?.trim();
+    let projectId = process.env.OPENAI_PROJECT_ID?.trim();
+
+    if (!projectId) {
+      const remainder = apiKey.slice('sk-proj-'.length);
+      const candidateToken = remainder.split('-')[0]?.trim();
+      if (candidateToken) {
+        const sanitized = candidateToken.replace(/^proj_/, '');
+        if (sanitized) {
+          projectId = `proj_${sanitized}`;
+        }
+      }
+    }
+
     if (!projectId) {
       throw new Error(
-        'Project-scoped keys (sk-proj-...) require setting OPENAI_PROJECT_ID to your project identifier (e.g. proj_123).'
+        'Project-scoped keys (sk-proj-...) require OPENAI_PROJECT_ID or a parseable project id inside the key.'
       );
     }
+
     headers['OpenAI-Project'] = projectId;
   }
 

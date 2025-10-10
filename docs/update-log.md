@@ -44,3 +44,7 @@
 - Added an in-repo runnable implementation (`lib/langchain-lite.ts`) to mirror LangChain's workflow primitives without external installs.
 - Updated the backend connectivity guide to highlight the new orchestrator and keep operators aligned on the Perplexity-first architecture.
 - Reverted automatic inference of project identifiers from `sk-proj-` secrets and now require explicit `OPENAI_PROJECT_ID` values so requests never send malformed project headers.
+
+## 2025-03-25
+- Restored automatic project-id extraction for `sk-proj-` keys (with sanitisation) while still honouring explicit `OPENAI_PROJECT_ID` overrides, ensuring project headers default to the expected `proj_...` format.
+- Refreshed connectivity docs to describe the new inference behaviour and recommend supplying the dashboard project id for certainty.
