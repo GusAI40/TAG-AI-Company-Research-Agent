@@ -1,123 +1,101 @@
-// Research Status Types
-export type ResearchStatus = {
-  step: string;
-  message: string;
-};
-
-// Research Output Types
-export type ResearchOutput = {
-  summary: string;
-  details: Record<string, any>;
-};
-
-// Query Types
-export type Query = {
-  text: string;
-  number: number;
-  category: string;
-};
-
-export type StreamingQuery = {
-  text: string;
-  number: number;
-  category: string;
-  isComplete: boolean;
-};
-
-// Document Count Types
-export type DocCount = {
-  initial: number;
-  kept: number;
-};
-
-export type DocCounts = {
-  company: DocCount;
-  industry: DocCount;
-  financial: DocCount;
-  news: DocCount;
-};
-
-// Briefing Types
-export type BriefingStatus = {
-  company: boolean;
-  industry: boolean;
-  financial: boolean;
-  news: boolean;
-};
-
-// Enrichment Types
-export type EnrichmentCounts = {
-  company: { total: number; enriched: number };
-  industry: { total: number; enriched: number };
-  financial: { total: number; enriched: number };
-  news: { total: number; enriched: number };
-};
-
-// Research State Types
-export type ResearchState = {
-  status: string;
-  message: string;
-  queries: Query[];
-  streamingQueries: Record<string, StreamingQuery>;
-  docCounts?: DocCounts;
-  enrichmentCounts?: EnrichmentCounts;
-  briefingStatus: BriefingStatus;
-};
-
-// Style Types
 export type GlassStyle = {
   base: string;
   card: string;
   input: string;
 };
 
-// Component Props Types
-export type ResearchStatusProps = {
-  status: ResearchStatus | null;
-  error: string | null;
-  isComplete: boolean;
-  currentPhase: 'search' | 'enrichment' | 'briefing' | 'complete' | null;
-  isResetting: boolean;
-  glassStyle: GlassStyle;
-  loaderColor: string;
-  statusRef: React.RefObject<HTMLDivElement>;
+export type PerplexitySource = {
+  title: string;
+  url?: string;
+  snippet: string;
+  score?: number | null;
+  published_at?: string | null;
 };
 
-export type ResearchQueriesProps = {
-  queries: Query[];
-  streamingQueries: Record<string, StreamingQuery>;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
-  isResetting: boolean;
-  glassStyle: string;
+export type PerplexityResult = {
+  query: string;
+  answer: string;
+  results: PerplexitySource[];
+  usage?: Record<string, unknown> | null;
 };
 
-export type ResearchBriefingsProps = {
-  briefingStatus: BriefingStatus;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
-  isResetting: boolean;
+export type ReActStep = {
+  thought: string;
+  action: string;
+  observation: string;
 };
 
-export type CurationExtractionProps = {
-  enrichmentCounts?: EnrichmentCounts;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
-  isResetting: boolean;
-  loaderColor: string;
+export type Metric = {
+  label: string;
+  value: string;
+  period?: string;
+  trend?: string;
+  note?: string;
 };
 
-// Form Types
-export type FormData = {
-  companyName: string;
-  companyUrl: string;
-  companyHq: string;
-  companyIndustry: string;
+export type MetricSection = {
+  title: string;
+  metrics: Metric[];
 };
 
-// Animation Types
-export type AnimationStyle = {
-  fadeIn: string;
-  writing: string;
-  colorTransition: string;
-}; 
+export type AgentProfile = {
+  company_name: string;
+  ticker?: string;
+  industry: string;
+  headquarters_location: string;
+  latest_filing: string;
+  fiscal_period: string;
+  summary_hook: string;
+};
+
+export type AgentQuickStat = {
+  label: string;
+  value: string;
+  note?: string;
+};
+
+export type AgentTakeaway = {
+  title: string;
+  detail: string;
+};
+
+export type AgentDiligenceQuestion = {
+  question: string;
+  why_it_matters: string;
+};
+
+export type AgentWatchItem = {
+  title: string;
+  detail: string;
+};
+
+export type AgentSummary = {
+  hero_headline: string;
+  hero_subheadline: string;
+  quick_stats: AgentQuickStat[];
+  key_takeaways: AgentTakeaway[];
+  scoreboard: MetricSection[];
+  diligence_questions: AgentDiligenceQuestion[];
+  next_actions: string[];
+};
+
+export type AgentWorkflowResult = {
+  research_trace: ReActStep[];
+  summary_trace: ReActStep[];
+  profile: AgentProfile;
+  metric_sections: MetricSection[];
+  watch_items: AgentWatchItem[];
+  diligence_questions: AgentDiligenceQuestion[];
+  summary: AgentSummary;
+  raw: {
+    research: string;
+    summary: string;
+  };
+};
+
+export type ResearchResponse = {
+  status: 'completed';
+  perplexity: PerplexityResult;
+  agent: AgentWorkflowResult | null;
+  agent_error: string | null;
+};

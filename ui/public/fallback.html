@@ -118,10 +118,11 @@
     
     <div class="card">
         <h2>Environment Variables</h2>
-        <p>Ensure these environment variables are set in Vercel:</p>
+        <p>Ensure the live deployment has the required secrets:</p>
         <ul>
-            <li><code>VITE_API_URL</code> = https://tag-ai-company-research-agent.fly.dev</li>
-            <li><code>VITE_WS_URL</code> = wss://tag-ai-company-research-agent.fly.dev</li>
+            <li><code>PERPLEXITY_API_KEY</code> – Perplexity Search access token</li>
+            <li><code>OPENAI_API_KEY</code> – Agent workflow key (use <code>sk-proj-...</code> or <code>sk-live-...</code>)</li>
+            <li><code>OPENAI_PROJECT_ID</code> – Only when using project-scoped keys; must look like <code>proj_...</code></li>
         </ul>
     </div>
 </body>
