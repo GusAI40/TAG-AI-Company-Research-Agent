@@ -6,8 +6,9 @@ PitchGuard no longer depends on the legacy Fly.io FastAPI deployment or the Lang
 
 1. **Frontend** – The React UI posts research requests directly to `/api/research/perplexity`.
 2. **Perplexity Search** – The serverless function calls the new `/search` endpoint to collect fresh citations.
-3. **Agent workflow** – The responses are summarised with the in-repo agent framework (`agents/pitchguard-workflow.ts`).
-4. **Response** – The API returns the Perplexity synthesis, structured citations, and the agent marketing profile.
+3. **LangChain orchestrator** – A lightweight LangChain-style pipeline (`lib/research-orchestrator.ts`) sequences validation, Perplexity calls, and agent prompts so every request follows the same audited path.
+4. **Agent workflow** – Responses are summarised with the in-repo agent framework (`agents/pitchguard-workflow.ts`), producing ReAct reasoning traces and structured company profiles.
+5. **Response** – The API returns the Perplexity synthesis, structured citations, and the agent marketing profile.
 
 No WebSocket or Fly.io coordination is required—the only runtime dependencies are valid `PERPLEXITY_API_KEY` and `OPENAI_API_KEY` environment variables.
 
