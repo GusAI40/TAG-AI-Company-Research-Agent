@@ -43,3 +43,7 @@ Once the HTTP request succeeds, the LangGraph workflow will run as designed.
 ## Logging
 
 The investigation steps above have been logged in `docs/update-log.md` for future reference.
+
+## Interim mitigation
+
+To keep research usable while the Fly.io deployment is offline, the Vercel frontend now exposes an edge function at `/api/research/perplexity`. The UI automatically invokes this fallback when the primary `/research` endpoint cannot be reached, so users continue to receive Perplexity-grounded summaries even during DNS outages. Once the Fly backend is restored you can remove or demote the fallback call if desired.
