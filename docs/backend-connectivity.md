@@ -1,49 +1,37 @@
-# Backend Connectivity Diagnosis
+# Backend Connectivity Reference
 
-This note summarizes the investigation into the research backend / LangGraph pipeline not being reachable from the deployed UI.
+PitchGuard no longer depends on the legacy Fly.io FastAPI deployment or the LangGraph pipeline. All research runs through the Vercel serverless function at `/api/research/perplexity`, which orchestrates Perplexity Search and the OpenAI-based agent workflow.
 
-## Observed behaviour
+## Current architecture
 
-- Browser console shows repeated failures when posting to `https://tag-ai-company-research-agent.fly.dev/research`, ending with `net::ERR_NAME_NOT_RESOLVED`.
-- After the automatic fallback to the Vercel preview deployment, every request is rejected with HTTP 401 due to deployment protection.
-- The UI therefore triggers the Perplexity fallback and surfaces "Authentication failed" guidance in the connection diagnostics panel.
+1. **Frontend** – The React UI posts research requests directly to `/api/research/perplexity`.
+2. **Perplexity Search** – The serverless function calls the new `/search` endpoint to collect fresh citations.
+3. **Agent workflow** – The responses are summarised with the in-repo agent framework (`agents/pitchguard-workflow.ts`).
+4. **Response** – The API returns the Perplexity synthesis, structured citations, and the agent marketing profile.
 
-## Direct network checks
+No WebSocket or Fly.io coordination is required—the only runtime dependencies are valid `PERPLEXITY_API_KEY` and `OPENAI_API_KEY` environment variables.
 
-From the project workspace we ran a DNS lookup and an HTTPS probe:
+## Troubleshooting steps
 
-```bash
-nslookup tag-ai-company-research-agent.fly.dev
-curl -I https://tag-ai-company-research-agent.fly.dev
-```
+When the UI reports "Authentication failed" or similar errors:
 
-- `nslookup` returns `NXDOMAIN`, which means there is currently no DNS record for that Fly.io app name.
-- `curl` fails to establish a tunnel because the hostname cannot be resolved to an active Fly machine from this environment.
+1. **Verify environment variables**
+   - `PERPLEXITY_API_KEY` – must be set for `/api/research/perplexity`.
+   - `OPENAI_API_KEY` – required for the agent workflow.
+2. **Test the Vercel function**
+   ```bash
+   curl -X POST https://<deployment-domain>/api/research/perplexity \
+     -H 'Content-Type: application/json' \
+     -d '{"company":"Example Corp","topic":"marketing"}'
+   ```
+   A healthy deployment responds with HTTP 200 and a JSON payload containing `perplexity` and `agent` fields.
+3. **Check rate limits** – Perplexity and OpenAI both enforce per-minute quotas. HTTP 429 responses indicate throttling.
+4. **Review logs** – Use `vercel logs` to inspect serverless output if requests fail silently.
 
-The combination confirms the Fly app referenced by `VITE_API_URL` / `VITE_WS_URL` is **not deployed or not named correctly**, so the UI has no reachable primary backend.
+## Migration notes
 
-## Why LangGraph appears "unreachable"
+- Previous DNS issues with `tag-ai-company-research-agent.fly.dev` are obsolete; the hostname is no longer used anywhere in the stack.
+- WebSocket code remains in the Python backend for archival purposes but is not invoked by the production UI.
+- Any future integrations should target the serverless function or add new routes under `api/` rather than reviving the Fly.io deployment.
 
-The LangGraph workflow is executed inside the FastAPI backend (`application.py`). Because the frontend never reaches the backend, the workflow never starts. The issue is therefore infrastructural (missing Fly deployment), not an error inside the LangGraph nodes.
-
-## Required actions
-
-1. Deploy (or redeploy) the backend to Fly with the expected app name, or update the environment variables to point at an existing deployment.
-   - `fly launch --copy-config --name tag-ai-company-research-agent`
-   - `fly deploy`
-2. If you prefer Vercel for the backend, expose an unprotected endpoint (remove Preview Protection or supply a bypass token) and update `VITE_API_URL` / `VITE_WS_URL`.
-3. After the backend is reachable, verify by calling the health endpoint:
-
-```bash
-curl https://<your-backend-domain>/health
-```
-
-Once the HTTP request succeeds, the LangGraph workflow will run as designed.
-
-## Logging
-
-The investigation steps above have been logged in `docs/update-log.md` for future reference.
-
-## Interim mitigation
-
-To keep research usable while the Fly.io deployment is offline, the Vercel frontend now exposes an edge function at `/api/research/perplexity`. The UI automatically invokes this fallback when the primary `/research` endpoint cannot be reached, so users continue to receive Perplexity-grounded summaries even during DNS outages. Once the Fly backend is restored you can remove or demote the fallback call if desired.
+This document is tracked in `docs/update-log.md` so future contributors understand that Perplexity-only routing is the canonical path.

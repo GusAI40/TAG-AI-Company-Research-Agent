@@ -18,3 +18,9 @@
 ## 2025-03-20
 - Provisioned an edge function at `/api/research/perplexity` so Vercel deployments can execute Perplexity fallback searches without relying on the unreachable Fly.io backend.
 - Updated the UI fallback workflow to leverage the on-origin endpoint, ensuring automatic recovery from DNS failures while retaining detailed connection diagnostics.
+
+## 2025-03-21
+- Rewired the stack to remove Fly.io dependencies and route all research through the Vercel `/api/research/perplexity` function.
+- Added a lightweight in-repo Agents SDK shim plus Zod-like validation so the workflow can run without pulling private npm packages.
+- Simplified the React client to call the new API directly and present Perplexity/agent output in a dedicated results panel.
+- Updated backend connectivity docs to reflect the Perplexity-only architecture and documented the required environment variables.

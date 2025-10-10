@@ -1,8 +1,23 @@
+import { runWorkflow } from '../../agents/pitchguard-workflow';
+import type { WorkflowOutput } from '../../agents/pitchguard-workflow';
+
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs18.x',
 };
 
-type IncomingBody = {
+type VercelRequest = {
+  method?: string;
+  body?: unknown;
+  headers?: Record<string, string | string[] | undefined>;
+};
+
+type VercelResponse = {
+  status: (code: number) => VercelResponse;
+  setHeader: (name: string, value: string) => void;
+  send: (body: string) => void;
+};
+
+interface IncomingBody {
   company?: string;
   topic?: string;
   industry?: string;
@@ -10,26 +25,31 @@ type IncomingBody = {
   focus?: unknown;
   query?: string;
   max_results?: number;
-};
+}
 
-type NormalisedResult = {
+interface NormalisedResult {
   title: string;
   url?: string;
   snippet: string;
   score?: number;
   published_at?: string;
-};
+}
 
-type PerplexityResponse = {
+interface PerplexityResponse {
   answer?: string;
   summary?: string;
   results?: Array<Record<string, unknown>>;
   usage?: Record<string, unknown>;
-};
+}
 
-const HEADERS = {
-  'Content-Type': 'application/json',
-};
+interface AgentResultPayload {
+  companies: WorkflowOutput['webResearchAgentResult']['output_parsed']['companies'];
+  summary: WorkflowOutput['summarizeAndDisplayResult']['output_parsed'];
+  raw: {
+    research: string;
+    summary: string;
+  };
+}
 
 const MAX_RESULTS_DEFAULT = 6;
 const MAX_RESULTS_CAP = 12;
@@ -83,29 +103,25 @@ const normaliseResults = (results: Array<Record<string, unknown>> | undefined): 
   }
 
   return results.map((result) => ({
-    title: (typeof result.title === 'string' && result.title.trim())
-      ? result.title.trim()
-      : (typeof result.name === 'string' && result.name.trim())
-        ? result.name.trim()
-        : 'Untitled result',
-    url: typeof result.url === 'string' ? result.url : (typeof result.source === 'string' ? result.source : undefined),
-    snippet: typeof result.snippet === 'string'
-      ? result.snippet
-      : typeof result.text === 'string'
-        ? result.text
-        : typeof result.description === 'string'
-          ? result.description
-          : '',
+    title:
+      typeof result.title === 'string' && result.title.trim()
+        ? result.title.trim()
+        : typeof result.name === 'string' && result.name.trim()
+          ? result.name.trim()
+          : 'Untitled result',
+    url: typeof result.url === 'string' ? result.url : typeof result.source === 'string' ? result.source : undefined,
+    snippet:
+      typeof result.snippet === 'string'
+        ? result.snippet
+        : typeof result.text === 'string'
+          ? result.text
+          : typeof result.description === 'string'
+            ? result.description
+            : '',
     score: typeof result.score === 'number' ? result.score : undefined,
     published_at: typeof result.published_at === 'string' ? result.published_at : undefined,
   }));
 };
-
-const jsonResponse = (status: number, data: Record<string, unknown>) =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: HEADERS,
-  });
 
 const clampResults = (value: unknown): number => {
   const numeric = typeof value === 'number' ? value : Number(value);
@@ -115,32 +131,72 @@ const clampResults = (value: unknown): number => {
   return MAX_RESULTS_DEFAULT;
 };
 
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'POST') {
-    return jsonResponse(405, { error: 'Method Not Allowed' });
+const createAgentPrompt = (body: IncomingBody, answer: string, sources: NormalisedResult[]): string => {
+  const lines: string[] = [];
+  if (body.company) {
+    lines.push(`Company: ${body.company}`);
+  }
+  if (body.industry) {
+    lines.push(`Industry: ${body.industry}`);
+  }
+  if (body.hq_location) {
+    lines.push(`Headquarters: ${body.hq_location}`);
+  }
+  if (body.topic) {
+    lines.push(`Focus topic: ${body.topic}`);
+  }
+
+  if (answer) {
+    lines.push('Perplexity synthesis:\n' + answer);
+  }
+
+  if (sources.length > 0) {
+    const formattedSources = sources
+      .slice(0, 6)
+      .map((source, index) => `${index + 1}. ${source.title} — ${source.url ?? 'no url provided'}`)
+      .join('\n');
+    lines.push('Key sources:\n' + formattedSources);
+  }
+
+  lines.push(
+    'Create a concise marketing-ready profile covering mission, differentiation, scale, and founding year. Highlight one compelling hook for a finance-focused student audience.'
+  );
+
+  return lines.join('\n\n');
+};
+
+const respond = (res: VercelResponse, status: number, data: Record<string, unknown>) => {
+  res.status(status).setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(data));
+};
+
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  if (req.method !== 'POST') {
+    respond(res, 405, { error: 'Method Not Allowed' });
+    return;
   }
 
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) {
-    return jsonResponse(500, {
+    respond(res, 500, {
       error: 'Perplexity integration is not configured. Set PERPLEXITY_API_KEY to enable this endpoint.',
     });
+    return;
   }
 
-  let body: IncomingBody | null = null;
-  try {
-    body = (await request.json()) as IncomingBody;
-  } catch (parseError) {
-    return jsonResponse(400, { error: 'Invalid JSON payload.' });
+  if (!process.env.OPENAI_API_KEY) {
+    respond(res, 500, {
+      error: 'OpenAI Agents require OPENAI_API_KEY. Configure it to enable the agentic workflow.',
+    });
+    return;
   }
 
-  if (!body) {
-    return jsonResponse(400, { error: 'Request payload is required.' });
-  }
+  const body: IncomingBody = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
 
   const query = buildQuery(body);
   if (!query) {
-    return jsonResponse(400, { error: 'A query, company name, or topic must be provided.' });
+    respond(res, 400, { error: 'A query, company name, or topic must be provided.' });
+    return;
   }
 
   const focus = normaliseFocus(body.focus);
@@ -155,33 +211,68 @@ export default async function handler(request: Request): Promise<Response> {
     payload.focus = focus;
   }
 
-  const response = await fetch(process.env.PERPLEXITY_SEARCH_URL ?? 'https://api.perplexity.ai/search', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  let perplexityData: PerplexityResponse;
 
-  if (!response.ok) {
-    const preview = await response.text().catch(() => '');
-    return jsonResponse(response.status, {
-      error: `Perplexity search failed with status ${response.status}.`,
-      details: preview.slice(0, 400),
+  try {
+    const response = await fetch(process.env.PERPLEXITY_SEARCH_URL ?? 'https://api.perplexity.ai/search', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
     });
+
+    if (!response.ok) {
+      const preview = await response.text().catch(() => '');
+      respond(res, response.status, {
+        error: `Perplexity search failed with status ${response.status}.`,
+        details: preview.slice(0, 400),
+      });
+      return;
+    }
+
+    perplexityData = (await response.json()) as PerplexityResponse;
+  } catch (error) {
+    respond(res, 502, {
+      error: 'Failed to contact the Perplexity Search API.',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    });
+    return;
   }
 
-  const data = (await response.json()) as PerplexityResponse;
   const normalised = {
     query,
-    answer: typeof data.answer === 'string' && data.answer ? data.answer : typeof data.summary === 'string' ? data.summary : '',
-    results: normaliseResults(data.results),
-    usage: data.usage ?? null,
+    answer: typeof perplexityData.answer === 'string' && perplexityData.answer
+      ? perplexityData.answer
+      : typeof perplexityData.summary === 'string'
+        ? perplexityData.summary
+        : '',
+    results: normaliseResults(perplexityData.results),
+    usage: perplexityData.usage ?? null,
   };
 
-  return jsonResponse(200, {
+  const agentPrompt = createAgentPrompt(body, normalised.answer, normalised.results);
+
+  let agentResult: AgentResultPayload | null = null;
+  try {
+    const workflowOutput = await runWorkflow({ input_as_text: agentPrompt });
+    agentResult = {
+      companies: workflowOutput.webResearchAgentResult.output_parsed.companies,
+      summary: workflowOutput.summarizeAndDisplayResult.output_parsed,
+      raw: {
+        research: workflowOutput.webResearchAgentResult.output_text,
+        summary: workflowOutput.summarizeAndDisplayResult.output_text,
+      },
+    };
+  } catch (error) {
+    console.error('Agent workflow failed', error);
+    agentResult = null;
+  }
+
+  respond(res, 200, {
     status: 'completed',
-    result: normalised,
+    perplexity: normalised,
+    agent: agentResult,
   });
 }

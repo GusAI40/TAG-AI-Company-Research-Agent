@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Theme, ThemeContextProps } from '../context';
 
 interface HeaderProps {
   glassStyle: string;
@@ -8,12 +7,14 @@ interface HeaderProps {
 
 const ThemeToggle = () => {
   const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return true;
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     return savedTheme ? savedTheme === 'dark' : prefersDark;
   });
 
   useEffect(() => {
+    if (typeof document === 'undefined') return;
     if (darkMode) {
       document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');
@@ -28,7 +29,7 @@ const ThemeToggle = () => {
   };
 
   return (
-    <button 
+    <button
       onClick={toggleTheme}
       className="theme-toggle"
       title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
@@ -55,12 +56,6 @@ const ThemeToggle = () => {
 };
 
 const Header: React.FC<HeaderProps> = ({ glassStyle, title = 'Company Research Agent' }) => {
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    console.error('Failed to load Tavily logo');
-    console.log('Image path:', e.currentTarget.src);
-    e.currentTarget.style.display = 'none';
-  };
-
   return (
     <header className="equilibrium-header">
       <div className="equilibrium-header__actions">
@@ -76,4 +71,4 @@ const Header: React.FC<HeaderProps> = ({ glassStyle, title = 'Company Research A
   );
 };
 
-export default Header; 
+export default Header;
