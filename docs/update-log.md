@@ -48,3 +48,4 @@
 ## 2025-03-25
 - Reverted project-id auto-inference for `sk-proj-` keys so deployments must supply `OPENAI_PROJECT_ID`, preventing malformed headers that triggered `invalid_project` responses.
 - Updated connectivity docs to emphasise the mandatory environment variable requirement for project-scoped keys.
+- Hardened project header validation so `OPENAI_PROJECT_ID` must match the `proj_...` format, avoiding accidental copies of API keys into the project field.

@@ -115,6 +115,12 @@ const buildOpenAIHeaders = (apiKey: string) => {
       );
     }
 
+    if (!/^proj_[A-Za-z0-9]+$/.test(projectId)) {
+      throw new Error(
+        `OPENAI_PROJECT_ID must look like "proj_..." but received "${projectId}". Check the value in your environment.`
+      );
+    }
+
     headers['OpenAI-Project'] = projectId;
   }
 
