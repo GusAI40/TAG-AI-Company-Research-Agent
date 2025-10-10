@@ -107,22 +107,11 @@ const buildOpenAIHeaders = (apiKey: string) => {
   }
 
   if (apiKey.startsWith('sk-proj-')) {
-    let projectId = process.env.OPENAI_PROJECT_ID?.trim();
-
-    if (!projectId) {
-      const remainder = apiKey.slice('sk-proj-'.length);
-      const candidateToken = remainder.split('-')[0]?.trim();
-      if (candidateToken) {
-        const sanitized = candidateToken.replace(/^proj_/, '');
-        if (sanitized) {
-          projectId = `proj_${sanitized}`;
-        }
-      }
-    }
+    const projectId = process.env.OPENAI_PROJECT_ID?.trim();
 
     if (!projectId) {
       throw new Error(
-        'Project-scoped keys (sk-proj-...) require OPENAI_PROJECT_ID or a parseable project id inside the key.'
+        'Project-scoped keys (sk-proj-...) require the OPENAI_PROJECT_ID environment variable.'
       );
     }
 

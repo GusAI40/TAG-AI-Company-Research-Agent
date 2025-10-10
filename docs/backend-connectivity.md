@@ -19,7 +19,7 @@ When the UI reports "Authentication failed" or similar errors:
 1. **Verify environment variables**
    - `PERPLEXITY_API_KEY` – must be set for `/api/research/perplexity`.
    - `OPENAI_API_KEY` – required for the agent workflow.
-   - `OPENAI_PROJECT_ID` – recommended for project-scoped keys. PitchGuard now attempts to derive the `proj_...` identifier from `sk-proj-` secrets automatically, but providing the explicit value from the OpenAI dashboard guarantees compatibility. Add `OPENAI_ORG_ID` if your organisation requires it.
+   - `OPENAI_PROJECT_ID` – mandatory whenever the key starts with `sk-proj-`. Copy the identifier directly from the OpenAI dashboard. Add `OPENAI_ORG_ID` if your organisation requires it.
 2. **Test the Vercel function**
    ```bash
    curl -X POST https://<deployment-domain>/api/research/perplexity \

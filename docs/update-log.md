@@ -46,5 +46,5 @@
 - Reverted automatic inference of project identifiers from `sk-proj-` secrets and now require explicit `OPENAI_PROJECT_ID` values so requests never send malformed project headers.
 
 ## 2025-03-25
-- Restored automatic project-id extraction for `sk-proj-` keys (with sanitisation) while still honouring explicit `OPENAI_PROJECT_ID` overrides, ensuring project headers default to the expected `proj_...` format.
-- Refreshed connectivity docs to describe the new inference behaviour and recommend supplying the dashboard project id for certainty.
+- Reverted project-id auto-inference for `sk-proj-` keys so deployments must supply `OPENAI_PROJECT_ID`, preventing malformed headers that triggered `invalid_project` responses.
+- Updated connectivity docs to emphasise the mandatory environment variable requirement for project-scoped keys.
