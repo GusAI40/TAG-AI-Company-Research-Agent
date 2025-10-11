@@ -21,12 +21,12 @@ const ResearchBriefings: React.FC<ResearchBriefingsProps> = ({
   onToggleExpand,
   isResetting
 }) => {
-  const glassStyle = "backdrop-filter backdrop-blur-lg bg-white/80 border border-gray-200 shadow-xl";
-  const cardGlassStyle = "backdrop-filter backdrop-blur-lg bg-white/80 shadow-sm";
+  const glassStyle = "equilibrium-card text-white";
+  const cardGlassStyle = "equilibrium-subpanel text-white";
 
   return (
-    <div 
-      className={`${glassStyle} rounded-2xl p-6 transition-all duration-300 ease-in-out ${
+    <div
+      className={`${glassStyle} equilibrium-panel transition-all duration-300 ease-in-out ${
         isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'
       } font-['DM_Sans']`}
     >
@@ -34,10 +34,10 @@ const ResearchBriefings: React.FC<ResearchBriefingsProps> = ({
         className="flex items-center justify-between cursor-pointer"
         onClick={onToggleExpand}
       >
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="text-xl font-semibold text-white">
           Research Briefings
         </h2>
-        <button className="text-gray-600 hover:text-gray-900 transition-colors">
+        <button className="text-[#D9D9D9] hover:text-white transition-colors">
           {isExpanded ? (
             <ChevronUp className="h-6 w-6" />
           ) : (
@@ -51,32 +51,32 @@ const ResearchBriefings: React.FC<ResearchBriefingsProps> = ({
       }`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 px-1">
           {['company', 'industry', 'financial', 'news'].map((category) => (
-            <div 
-              key={category} 
-              className={`${cardGlassStyle} rounded-lg p-4 transition-all duration-500 ease-in-out relative ${
-                briefingStatus[category as keyof BriefingStatus] 
-                  ? 'border border-[#468BFF] bg-gradient-to-br from-[#468BFF]/5 to-[#468BFF]/10 shadow-md' 
-                  : 'border border-gray-200 bg-white/80 hover:border-gray-300 hover:shadow-sm'
-              } backdrop-blur-sm group`}
+            <div
+              key={category}
+              className={`${cardGlassStyle} p-4 transition-all duration-500 ease-in-out relative ${
+                briefingStatus[category as keyof BriefingStatus]
+                  ? 'border border-[#0078D2]/45 bg-gradient-to-br from-[#0078D2]/15 to-transparent shadow-lg'
+                  : 'border border-white/10 bg-white/5 hover:border-white/25'
+              } group`}
             >
               {/* Background decoration element (only visible when active) */}
               <div 
-                className={`absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(70,139,255,0.15),transparent_70%)] opacity-0 transition-opacity duration-700 ease-in-out rounded-lg ${
+                className={`absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(0,120,210,0.3),transparent_70%)] opacity-0 transition-opacity duration-700 ease-in-out rounded-lg ${
                   briefingStatus[category as keyof BriefingStatus] ? 'opacity-100' : ''
                 }`}
                 style={{ pointerEvents: 'none' }}
               />
-              
+
               <div className="relative z-10 flex items-center justify-between">
                 <h3 className={`text-sm font-medium capitalize transition-all duration-500 ${
                   briefingStatus[category as keyof BriefingStatus]
-                    ? 'text-[#468BFF]'
-                    : 'text-gray-700 group-hover:text-gray-900'
+                    ? 'text-[#79C1FF]'
+                    : 'text-[#D9D9D9] group-hover:text-white'
                 }`}>{category}</h3>
                 {briefingStatus[category as keyof BriefingStatus] ? (
-                  <CheckCircle2 className="h-4 w-4 text-[#468BFF] transition-all duration-300" />
+                  <CheckCircle2 className="h-4 w-4 text-[#79C1FF] transition-all duration-300" />
                 ) : (
-                  <div className="h-4 w-4 rounded-full border border-gray-200 group-hover:border-gray-300 transition-all duration-300"></div>
+                  <div className="h-4 w-4 rounded-full border border-white/20 group-hover:border-white/40 transition-all duration-300"></div>
                 )}
               </div>
             </div>
@@ -85,7 +85,7 @@ const ResearchBriefings: React.FC<ResearchBriefingsProps> = ({
       </div>
 
       {!isExpanded && (
-        <div className="mt-2 text-sm text-gray-600">
+        <div className="mt-2 text-sm text-[#D9D9D9]">
           {Object.values(briefingStatus).filter(Boolean).length} of {Object.keys(briefingStatus).length} briefings completed
         </div>
       )}
