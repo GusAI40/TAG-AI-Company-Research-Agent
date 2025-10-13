@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "ai": "^3.1.36",
     "framer-motion": "^12.4.10",
     "lucide-react": "^0.344.0",
     "react": "^18.2.0",
@@ -21,8 +22,6 @@
     "serve": "^14.2.1"
   },
   "devDependencies": {
-    "@types/google.maps": "^3.58.1",
-    "@types/node": "^22.13.9",
     "@types/react": "^18.2.56",
     "@types/react-dom": "^18.2.19",
     "@typescript-eslint/eslint-plugin": "^7.0.2",
