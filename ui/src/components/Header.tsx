@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Theme, ThemeContextProps } from '../context';
+import React, { useMemo, useState, useEffect } from 'react';
+import useTypedText from '../hooks/useTypedText';
 
 interface HeaderProps {
   glassStyle: string;
@@ -7,33 +7,50 @@ interface HeaderProps {
 }
 
 const ThemeToggle = () => {
-  const [darkMode, setDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    return savedTheme ? savedTheme === 'dark' : prefersDark;
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window === 'undefined') {
+      return 'dark';
+    }
+
+    const saved = localStorage.getItem('theme');
+    let resolved: 'dark' | 'light';
+
+    if (saved === 'light' || saved === 'dark') {
+      resolved = saved;
+    } else {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      resolved = prefersDark ? 'dark' : 'light';
+    }
+
+    if (typeof document !== 'undefined') {
+      document.documentElement.dataset.theme = resolved;
+      document.documentElement.classList.remove('dark');
+    }
+
+    return resolved;
   });
 
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+    if (typeof document === 'undefined') {
+      return;
     }
-  }, [darkMode]);
+
+    document.documentElement.classList.remove('dark');
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   const toggleTheme = () => {
-    setDarkMode(!darkMode);
+    setTheme((current) => (current === 'dark' ? 'light' : 'dark'));
   };
 
   return (
-    <button 
+    <button
       onClick={toggleTheme}
       className="theme-toggle"
-      title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+      title={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
     >
-      {darkMode ? (
+      {theme === 'dark' ? (
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="5" />
           <line x1="12" y1="1" x2="12" y2="3" />
@@ -54,28 +71,98 @@ const ThemeToggle = () => {
   );
 };
 
+const heroMessages = [
+  'Spot hidden risks before they reach the room.',
+  'Surface KPIs that give every analyst an instant edge.',
+  'Turn any stock pitch into a confident, evidence-backed story.',
+];
+
+const heroSignals = [
+  { icon: '⚡️', label: 'Instant KPI snapshot' },
+  { icon: '🛡️', label: 'Governance watchlist cues' },
+  { icon: '🧭', label: 'Diligence prompts that drive debate' },
+  { icon: '📈', label: 'YoY trends in a single glance' },
+];
+
 const Header: React.FC<HeaderProps> = ({ glassStyle, title = 'Company Research Agent' }) => {
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    console.error('Failed to load Tavily logo');
-    console.log('Image path:', e.currentTarget.src);
-    e.currentTarget.style.display = 'none';
-  };
+  const { text: typedMessage, stage } = useTypedText(heroMessages, {
+    typingSpeed: 36,
+    deletingSpeed: 24,
+    holdDuration: 2600,
+  });
+
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const tick = () => setNow(new Date());
+    const interval = window.setInterval(tick, 1000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const formattedTime = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+      }).format(now),
+    [now]
+  );
+
+  const formattedDate = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }).format(now),
+    [now]
+  );
+
+  const animatedSignals = useMemo(
+    () =>
+      heroSignals.map((signal, index) => ({
+        ...signal,
+        delay: `${index * 0.12}s`,
+      })),
+    []
+  );
 
   return (
-    <div className="relative mb-16">
-      <div className="text-center pt-4">
-        <h1 className="text-[48px] font-medium text-[#1a202c] font-['DM_Sans'] tracking-[-1px] leading-[52px] text-center mx-auto antialiased">
-          {title}
-        </h1>
-        <p className="text-gray-600 text-lg font-['DM_Sans'] mt-4">
-          Conduct in-depth company diligence powered by TAG ai
-        </p>
+    <header className="equilibrium-header">
+      <div className="equilibrium-header__clock" aria-live="polite">
+        <span className="equilibrium-clock__time">{formattedTime}</span>
+        <span className="equilibrium-clock__date">{formattedDate}</span>
       </div>
-      <div className="absolute top-0 right-0 flex items-center space-x-4">
+      <div className="equilibrium-header__actions">
         <ThemeToggle />
       </div>
-    </div>
+      <span className="equilibrium-badge">PitchGuard • Ole Miss Finance Club</span>
+      <h1 className="equilibrium-title">{title}</h1>
+      <p className="equilibrium-subtext equilibrium-subtext--animated" aria-live="polite">
+        <span className="hero-typed" data-stage={stage}>
+          {typedMessage}
+          <span className="hero-caret" aria-hidden="true" />
+        </span>
+      </p>
+      <ul className="hero-signal-list" aria-hidden="true">
+        {animatedSignals.map((signal) => (
+          <li
+            key={signal.label}
+            className="hero-signal"
+            style={{ animationDelay: signal.delay }}
+          >
+            <span className="hero-signal__icon" role="presentation">
+              {signal.icon}
+            </span>
+            <span className="hero-signal__label">{signal.label}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="equilibrium-divider" />
+    </header>
   );
 };
 
-export default Header; 
+export default Header;

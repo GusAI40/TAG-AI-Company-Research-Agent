@@ -1,0 +1,560 @@
+import React from 'react';
+import { Loader2, ExternalLink } from 'lucide-react';
+import {
+  AgentWorkflowResult,
+  DeepResearchResult,
+  GlassStyle,
+  PerplexityResult,
+  ReActStep,
+} from '../types';
+import ResearchLoadingExperience from './ResearchLoadingExperience';
+
+const sanitizeUrl = (candidate: string): string | null => {
+  if (typeof candidate !== 'string') {
+    return null;
+  }
+
+  const trimmed = candidate
+    .trim()
+    .replace(/^[(<\[]+/, '')
+    .replace(/[)>.,;:'"\]]+$/g, '');
+
+  if (!trimmed || !/^https?:\/\//i.test(trimmed)) {
+    return null;
+  }
+
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+    return url.href;
+  } catch (error) {
+    return null;
+  }
+};
+
+const deriveLabel = (url: string, title: string | undefined, index: number): string => {
+  if (title) {
+    const trimmed = title.trim();
+    if (trimmed.length > 0) {
+      return trimmed.length > 64 ? `${trimmed.slice(0, 61)}…` : trimmed;
+    }
+  }
+
+  try {
+    const { hostname } = new URL(url);
+    const cleanHost = hostname.replace(/^www\./i, '');
+    if (cleanHost) {
+      return cleanHost;
+    }
+  } catch (error) {
+    // ignore hostname parsing errors
+  }
+
+  return `Source ${index + 1}`;
+};
+
+const normaliseSourceLinks = (
+  raw: string,
+  results: PerplexityResult['results'],
+): Array<{ url: string; label: string }> => {
+  if (!raw) {
+    return [];
+  }
+
+  const links = new Map<string, string | undefined>();
+  const urlMatches = raw.match(/https?:\/\/[^\s)]+/gi) ?? [];
+
+  urlMatches.forEach((match) => {
+    const clean = sanitizeUrl(match);
+    if (clean) {
+      links.set(clean, undefined);
+    }
+  });
+
+  if (links.size === 0) {
+    const indexMatches = [...raw.matchAll(/#(\d+)/g)];
+    indexMatches.forEach((match) => {
+      const index = Number.parseInt(match[1], 10);
+      if (Number.isInteger(index) && index > 0 && index <= results.length) {
+        const candidate = results[index - 1];
+        if (candidate?.url) {
+          const clean = sanitizeUrl(candidate.url);
+          if (clean) {
+            links.set(clean, candidate.title);
+          }
+        }
+      }
+    });
+  }
+
+  if (links.size === 0) {
+    const numericMatches = [...raw.matchAll(/\b(\d{1,2})\b/g)];
+    numericMatches.forEach((match) => {
+      const index = Number.parseInt(match[1], 10);
+      if (Number.isInteger(index) && index > 0 && index <= results.length) {
+        const candidate = results[index - 1];
+        if (candidate?.url) {
+          const clean = sanitizeUrl(candidate.url);
+          if (clean) {
+            links.set(clean, candidate.title);
+          }
+        }
+      }
+    });
+  }
+
+  return Array.from(links.entries()).map(([url, title], idx) => ({
+    url,
+    label: deriveLabel(url, title, idx),
+  }));
+};
+
+const SourceLinks: React.FC<{
+  source: string;
+  results: PerplexityResult['results'];
+}> = ({ source, results }) => {
+  const links = React.useMemo(() => normaliseSourceLinks(source, results), [source, results]);
+
+  if (links.length === 0) {
+    if (!source) {
+      return null;
+    }
+
+    const trimmed = source.trim();
+    const display = trimmed.length > 160 ? `${trimmed.slice(0, 157)}…` : trimmed;
+
+    return (
+      <p className="mt-2 text-xs text-[#79C1FF]" title={trimmed}>
+        Source: <span className="break-words">{display}</span>
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-2 text-xs">
+      {links.map((link, index) => (
+        <a
+          key={`${link.url}-${index}`}
+          href={link.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[#79C1FF] transition hover:bg-white/20"
+        >
+          <span>{link.label}</span>
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      ))}
+    </div>
+  );
+};
+
+const DeepResearchSources: React.FC<{ sources: DeepResearchResult['sources'] }> = ({ sources }) => {
+  const entries = React.useMemo(() => {
+    return sources
+      .map((source, index) => {
+        const url = source.url ? sanitizeUrl(source.url) : null;
+        if (!url) {
+          return null;
+        }
+        return {
+          url,
+          label: deriveLabel(url, source.title, index),
+        };
+      })
+      .filter((item): item is { url: string; label: string } => Boolean(item));
+  }, [sources]);
+
+  if (entries.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3 flex flex-wrap gap-2 text-xs">
+      {entries.map((entry) => (
+        <a
+          key={entry.url}
+          href={entry.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[#79C1FF] transition hover:bg-white/20"
+        >
+          <span>{entry.label}</span>
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      ))}
+    </div>
+  );
+};
+
+interface ResultsPanelProps {
+  isLoading: boolean;
+  error: string | null;
+  result: PerplexityResult | null;
+  deepResearch: DeepResearchResult | null;
+  deepResearchError: string | null;
+  agentResult: AgentWorkflowResult | null;
+  agentError: string | null;
+  glassStyle: GlassStyle;
+}
+
+const renderTrace = (title: string, steps: ReActStep[]) => {
+  if (!steps || steps.length === 0) {
+    return null;
+  }
+
+  return (
+    <details className="group rounded-2xl border border-white/10 bg-white/5/10 p-4 text-white/80 sm:p-5">
+      <summary className="cursor-pointer select-none text-base font-semibold text-white/80 outline-none transition group-open:text-white sm:text-lg">
+        {title}
+      </summary>
+      <ol className="mt-4 space-y-3">
+        {steps.map((step, index) => (
+          <li
+            key={`${title}-${index}-${step.action}`}
+            className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80 sm:p-5 sm:text-base"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-[0.65rem] uppercase tracking-[0.35em] text-white/50 sm:text-xs">Step {index + 1}</span>
+              <span className="rounded-full bg-[#0078D2]/20 px-3 py-1 text-[0.65rem] font-medium text-[#79C1FF] sm:text-xs">
+                {step.action}
+              </span>
+            </div>
+            <p className="mt-3 text-sm text-white/90 sm:text-base">
+              <span className="font-semibold text-white/70">Thought:</span> {step.thought}
+            </p>
+            <p className="mt-2 text-sm text-white/90 sm:text-base">
+              <span className="font-semibold text-white/70">Observation:</span> {step.observation}
+            </p>
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
+};
+
+const ResultsPanel: React.FC<ResultsPanelProps> = ({
+  isLoading,
+  error,
+  result,
+  deepResearch,
+  deepResearchError,
+  agentResult,
+  agentError,
+  glassStyle,
+}) => {
+  return (
+    <section className="equilibrium-section">
+      <div className={`${glassStyle.card} equilibrium-panel space-y-6 sm:space-y-8`}>
+        <header className="space-y-2">
+          <span className="equilibrium-badge text-[0.65rem] uppercase tracking-[0.3em] text-white/60 sm:text-xs">Perplexity • OpenAI Agents</span>
+          <h2 className="text-2xl font-semibold text-white sm:text-3xl">Hero Briefing</h2>
+          <p className="max-w-2xl text-sm text-white/60 sm:text-base">
+            PitchGuard fuses Perplexity’s newest search with an OpenAI agentic brain to deliver a brilliant, cited snapshot in seconds.
+          </p>
+          <p className="max-w-2xl text-sm text-white/70 sm:text-base">
+            Drop this into your deck and your clients feel unstoppable—because you brought the effortless clarity that wins the room.
+          </p>
+        </header>
+
+        {isLoading && (
+          <div className="space-y-5 sm:space-y-6">
+            <div className="flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5/20 px-4 py-5 text-white/80 sm:px-6 sm:py-6">
+              <Loader2 className="h-6 w-6 animate-spin loader-icon" />
+              <span className="text-sm sm:text-base">Crafting your hero briefing…</span>
+            </div>
+            <ResearchLoadingExperience glassClass={glassStyle.card} />
+          </div>
+        )}
+
+        {error && (
+          <div className="rounded-2xl border border-[#8A1C33]/60 bg-[#8A1C33]/20 px-4 py-5 text-white sm:px-6 sm:py-6">
+            <h3 className="text-base font-semibold sm:text-lg">We hit a snag</h3>
+            <p className="mt-2 text-sm text-white/80 sm:text-base">{error}</p>
+            <p className="mt-4 text-xs text-white/60 sm:text-sm">
+              Confirm your Perplexity and OpenAI keys are set, then relaunch PitchGuard.
+            </p>
+          </div>
+        )}
+
+        {!isLoading && !error && !result && (
+          <div className="rounded-2xl border border-white/10 bg-white/5/20 px-4 py-5 text-sm text-white/70 sm:px-6 sm:py-6 sm:text-base">
+            <p className="leading-relaxed">
+              Enter a company to get an instantly readable briefing, complete with clean citations and a ready-to-share profile.
+            </p>
+          </div>
+        )}
+
+        {result && !error && (
+          <div className="space-y-6 sm:space-y-8">
+            {result.answer && (
+              <div className="space-y-3">
+                <h3 className="text-xl font-semibold text-white sm:text-2xl">Perplexity spotlight</h3>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-white/80 sm:text-base">{result.answer}</p>
+              </div>
+            )}
+
+            {deepResearchError && (
+              <div className="rounded-2xl border border-[#8A1C33]/60 bg-[#8A1C33]/20 px-4 py-5 text-white sm:px-6 sm:py-6">
+                <h3 className="text-base font-semibold sm:text-lg">Gemini Deep Research unavailable</h3>
+                <p className="mt-2 text-sm text-white/80 sm:text-base">{deepResearchError}</p>
+                <p className="mt-4 text-xs text-white/60 sm:text-sm">
+                  Confirm your Gemini API key and deep research model, then relaunch PitchGuard to restore the agent handoff.
+                </p>
+              </div>
+            )}
+
+            {deepResearch && (
+              <div className="space-y-4 rounded-3xl border border-white/10 bg-white/5/10 p-5 sm:p-6">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-white sm:text-2xl">Gemini Deep Research findings</h3>
+                    <p className="text-xs text-white/60 sm:text-sm">
+                      High-signal insights synthesised with Gemini 2.5 Deep Research for Ole Miss Finance Club diligence.
+                    </p>
+                  </div>
+                </div>
+                {deepResearch.summary && (
+                  <p className="whitespace-pre-line text-sm text-white/80 sm:text-base">{deepResearch.summary}</p>
+                )}
+                {deepResearch.insights.length > 0 && (
+                  <ul className="space-y-2 rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-white/80 sm:text-sm">
+                    {deepResearch.insights.map((insight, index) => (
+                      <li key={`${insight}-${index}`} className="flex gap-3">
+                        <span className="font-semibold text-[#79C1FF]">[{index + 1}]</span>
+                        <span>{insight}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <DeepResearchSources sources={deepResearch.sources} />
+              </div>
+            )}
+
+            {agentError && (
+              <div className="rounded-2xl border border-[#8A1C33]/60 bg-[#8A1C33]/20 px-4 py-5 text-white sm:px-6 sm:py-6">
+                <h3 className="text-base font-semibold sm:text-lg">Agent unavailable</h3>
+                <p className="mt-2 text-sm text-white/80 sm:text-base">{agentError}</p>
+                <p className="mt-4 text-xs text-white/60 sm:text-sm">
+                  Perplexity results are still complete—relaunch after updating your AI keys to re-enable agent summaries.
+                </p>
+              </div>
+            )}
+
+            {agentResult && (() => {
+              const scoreboardSections =
+                agentResult.summary.scoreboard.length > 0
+                  ? agentResult.summary.scoreboard
+                  : agentResult.metric_sections;
+
+              const diligenceSet =
+                agentResult.summary.diligence_questions.length > 0
+                  ? agentResult.summary.diligence_questions
+                  : agentResult.diligence_questions;
+
+              return (
+                <div className="space-y-6 sm:space-y-8">
+                  <div className="rounded-3xl border border-white/10 bg-white/5/10 p-5 sm:p-6 md:p-8">
+                    <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+                      <div className="space-y-2">
+                        <span className="text-[0.65rem] uppercase tracking-[0.35em] text-white/50 sm:text-xs">Company</span>
+                        <h3 className="text-2xl font-semibold text-white sm:text-3xl">
+                          {agentResult.profile.company_name}
+                          {agentResult.profile.ticker ? ` (${agentResult.profile.ticker})` : ''}
+                        </h3>
+                        <p className="max-w-xl text-sm text-white/70 sm:text-base">{agentResult.profile.summary_hook}</p>
+                      </div>
+                      <div className="grid gap-3 text-xs text-white/70 sm:text-sm md:text-right">
+                        <div>
+                          <span className="font-semibold text-white">Industry:</span> {agentResult.profile.industry}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-white">Headquarters:</span>{' '}
+                          {agentResult.profile.headquarters_location}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-white">Latest filing:</span>{' '}
+                          {agentResult.profile.latest_filing}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-white">Fiscal period:</span>{' '}
+                          {agentResult.profile.fiscal_period}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 rounded-2xl border border-white/10 bg-[#0B1831]/60 p-5 sm:p-6">
+                      <p className="text-xs uppercase tracking-[0.35em] text-[#79C1FF] sm:text-sm">Hero briefing</p>
+                      <p className="mt-3 text-xl font-semibold text-white sm:text-2xl">
+                        {agentResult.summary.hero_headline}
+                      </p>
+                      <p className="mt-3 text-sm text-white/70 sm:text-base">{agentResult.summary.hero_subheadline}</p>
+                    </div>
+                  </div>
+
+                  {agentResult.summary.quick_stats.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-semibold text-white sm:text-2xl">Quick stats</h3>
+                      <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {agentResult.summary.quick_stats.map((stat) => (
+                          <article
+                            key={`${stat.label}-${stat.value}`}
+                            className="rounded-2xl border border-white/10 bg-white/5/10 p-4 sm:p-5"
+                          >
+                            <p className="text-[0.65rem] uppercase tracking-[0.35em] text-white/50 sm:text-xs">{stat.label}</p>
+                            <p className="mt-2 text-lg font-semibold text-white sm:text-xl">{stat.value}</p>
+                            <SourceLinks source={stat.source} results={result.results} />
+                            {stat.note && <p className="mt-2 text-xs text-white/70 sm:text-sm">{stat.note}</p>}
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {agentResult.summary.key_takeaways.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-semibold text-white sm:text-2xl">Key takeaways</h3>
+                      <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+                        {agentResult.summary.key_takeaways.map((item) => (
+                          <article
+                            key={item.title}
+                            className="rounded-2xl border border-white/10 bg-white/5/10 p-4 sm:p-5"
+                          >
+                            <p className="text-[0.65rem] uppercase tracking-[0.35em] text-white/50 sm:text-xs">{item.title}</p>
+                            <p className="mt-2 text-sm text-white/80 sm:text-base">{item.detail}</p>
+                            <SourceLinks source={item.source} results={result.results} />
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {scoreboardSections.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-semibold text-white sm:text-2xl">Scoreboard</h3>
+                      <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+                        {scoreboardSections.map((section) => (
+                          <article
+                            key={section.title}
+                            className="rounded-2xl border border-white/10 bg-white/5/10 p-4 sm:p-5"
+                          >
+                            <header className="flex items-center justify-between">
+                              <h4 className="text-base font-semibold text-white sm:text-lg">{section.title}</h4>
+                            </header>
+                            <ul className="mt-4 space-y-3">
+                              {section.metrics.map((metric) => (
+                                <li key={`${section.title}-${metric.label}`} className="text-sm text-white/80 sm:text-base">
+                                  <div className="flex items-baseline justify-between gap-3">
+                                    <span className="font-medium text-white">{metric.label}</span>
+                                    <span className="text-white/70">{metric.value}</span>
+                                  </div>
+                                  <SourceLinks source={metric.source} results={result.results} />
+                                  {(metric.period || metric.trend || metric.note) && (
+                                    <p className="mt-1 text-xs text-white/60 sm:text-sm">
+                                      {[metric.period, metric.trend, metric.note]
+                                        .filter(Boolean)
+                                        .join(' • ')}
+                                    </p>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {agentResult.watch_items.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-semibold text-white sm:text-2xl">Watch list</h3>
+                      <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+                        {agentResult.watch_items.map((item) => (
+                          <article
+                            key={item.title}
+                            className="rounded-2xl border border-white/10 bg-white/5/10 p-4 sm:p-5"
+                          >
+                            <p className="text-[0.65rem] uppercase tracking-[0.35em] text-[#FFB4C4] sm:text-xs">{item.title}</p>
+                            <p className="mt-2 text-sm text-white/80 sm:text-base">{item.detail}</p>
+                            <SourceLinks source={item.source} results={result.results} />
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {diligenceSet.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-semibold text-white sm:text-2xl">Diligence questions</h3>
+                      <ul className="space-y-3">
+                        {diligenceSet.map((item, index) => (
+                          <li
+                            key={`${item.question}-${index}`}
+                            className="rounded-2xl border border-white/10 bg-white/5/10 p-4 text-sm text-white/80 sm:p-5 sm:text-base"
+                          >
+                            <p className="font-semibold text-white">{item.question}</p>
+                            <p className="mt-1 text-xs text-white/70 sm:text-sm">{item.why_it_matters}</p>
+                            <SourceLinks source={item.source} results={result.results} />
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {agentResult.summary.next_actions.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-semibold text-white sm:text-2xl">Next actions</h3>
+                      <ul className="grid gap-3 md:grid-cols-2">
+                        {agentResult.summary.next_actions.map((action) => (
+                          <li
+                            key={action}
+                            className="rounded-2xl border border-white/10 bg-white/5/10 p-4 text-sm text-white/80 sm:text-base"
+                          >
+                            {action}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {agentResult && renderTrace('Research reasoning trace', agentResult.research_trace)}
+
+            {agentResult && renderTrace('Narrative reasoning trace', agentResult.summary_trace)}
+
+            {result.results.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold text-white sm:text-2xl">Source citations</h3>
+                <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+                  {result.results.map((source, index) => (
+                    <article key={`${source.url}-${index}`} className="rounded-2xl border border-white/10 bg-white/5/10 p-4 sm:p-5 transition hover:border-[#79C1FF]/60">
+                      <p className="text-[0.65rem] uppercase tracking-[0.35em] text-white/50 sm:text-xs">Source {index + 1}</p>
+                      <h4 className="mt-2 text-base font-semibold text-white sm:text-lg">{source.title}</h4>
+                      <p className="mt-2 text-sm text-white/70 leading-relaxed sm:text-base">{source.snippet}</p>
+                      {source.url && (
+                        <a
+                          className="mt-3 inline-flex items-center gap-1 text-xs text-[#79C1FF] transition hover:text-white sm:text-sm"
+                          href={source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          View source
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
+
+export default ResultsPanel;

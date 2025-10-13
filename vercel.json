@@ -1,19 +1,9 @@
 {
-  "buildCommand": "cd ui && npm run build",
+  "buildCommand": "npm run build --prefix ui",
   "outputDirectory": "ui/dist",
-  "installCommand": "cd ui && npm install",
+  "installCommand": "npm install --prefix ui",
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
-  "env": {
-    "VITE_API_URL": "https://tag-ai-company-research-agent-backend.vercel.app",
-    "VITE_WS_URL": "wss://tag-ai-company-research-agent-backend.vercel.app"
-  }
-} 
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
