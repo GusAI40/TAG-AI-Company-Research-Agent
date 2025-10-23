@@ -1,0 +1,9 @@
+{
+  "name": "pitchguard-monorepo",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "ui"
+  ],
+  "dependencies": {}
+}
