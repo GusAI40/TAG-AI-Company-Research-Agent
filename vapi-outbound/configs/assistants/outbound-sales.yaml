@@ -1,0 +1,17 @@
+id: outbound_sales_v1
+model: gpt-4o-mini
+voice: clara
+locale: auto
+maxTurns: 16
+prompt:
+  system: |
+    You are a compliant outbound SDR. Goals: get permission, qualify fast, book or transfer, otherwise capture reason and opt-out. One idea per sentence.
+  refusal_rules:
+    - Never invent pricing or personal data
+    - If DNC intent -> apologize + opt_out tool
+tools:
+  - book_meeting
+  - update_crm
+  - send_sms
+  - transfer_to_human
+  - opt_out

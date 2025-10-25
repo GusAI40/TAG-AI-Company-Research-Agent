@@ -1,0 +1,17 @@
+assistantRef: outbound_sales_v1
+calling_window:
+  start_local: "09:00"
+  end_local: "17:00"
+throttle:
+  cps: 3
+  max_concurrent: 25
+ab:
+  bucket_field: ab_bucket
+  variants:
+    A:
+      opener: "Hi {{first_name}}, quick one about {{problem}}—got 30 seconds?"
+    B:
+      opener: "Hey {{first_name}}, can I run a 20-second idea by you?"
+dispositions:
+  qualified: ["qualified","booked","transfer"]
+  suppress: ["do_not_call","not_interested","bad_number"]

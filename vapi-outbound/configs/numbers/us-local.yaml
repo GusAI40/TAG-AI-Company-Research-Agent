@@ -1,0 +1,8 @@
+local_presence: true
+pool:
+  - +12145551234
+  - +14695550123
+stir_shaken: "required"
+rotation:
+  strategy: health_score
+  min_gap_minutes: 30
